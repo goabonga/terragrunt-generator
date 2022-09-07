@@ -1,0 +1,7 @@
+[flake8]
+ignore = E402, E127, W503, W504, N807, E501
+exclude = .git, __pycache__, __init__.py, chart/, config/
+max-complexity = 10
+count = true
+max-line-length = 80
+statistics = true
