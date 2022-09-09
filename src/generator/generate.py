@@ -121,7 +121,9 @@ inputs = {{
 """
 
 
-def generate(url: str, path: str, version: str, variables: list, include: bool = True, config: str = 'config.yaml') -> str:
+def generate(url: str, path: str, version: str, variables: list,
+             include: bool = True, config: str = 'config.yaml',
+             lookup: str = "[\"{name}\"]") -> str:
 
     _variables: list = []
 
@@ -155,12 +157,13 @@ def generate(url: str, path: str, version: str, variables: list, include: bool =
         if path is not None
         else url.split('/')[-1:][0].replace('.git', '')
     )
+    lookup = f'local.all{lookup.format(name=name,)}'
     results: str
     results = generate_header(name, version, variables)
     results += generate_include(include)
     results += generate_locals(config)
     results += generate_terraform(
-        url, path, version, f'local.all["{name}"]'
+        url, path, version, lookup
     )
-    results += generate_inputs(variables, f'local.all["{name}"]')
+    results += generate_inputs(variables, lookup)
     return results

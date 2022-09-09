@@ -30,9 +30,14 @@ def main():
     parser.add_argument(
         '-c', '--config', help='define the yaml config path', default="find_in_parent_folders(\"config.yaml\")"
     )
+    parser.add_argument(
+        '-l', '--lookup', help='define the lookup path', default="[\"{name}\"]"
+    )
+
     args = parser.parse_args()
 
     tempdir = f'{gettempdir()}/{uuid4()}'
+
     clone(args.url, tempdir, args.version)
 
     variables: list = read_directory(
@@ -45,7 +50,8 @@ def main():
         args.version,
         variables,
         args.include,
-        args.config
+        args.config,
+        args.lookup
     )
 
     print(output)
