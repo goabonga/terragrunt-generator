@@ -32,10 +32,12 @@ def generate_include(enable: bool = True) -> str:
 
 
 def generate_locals(filename: str = 'config.yaml') -> str:
+    filename = f"{filename.removeprefix('#')}" \
+        if filename.startswith('#') is True else f'"{filename}"'
     return f"""
 locals {{
     all = merge(
-        yamldecode(file(find_in_parent_folders("{filename}"))),
+        yamldecode(file({filename})),
     )
 }}
 """
@@ -119,7 +121,7 @@ inputs = {{
 """
 
 
-def generate(url: str, path: str, version: str, variables: list, include: bool = True) -> str:
+def generate(url: str, path: str, version: str, variables: list, include: bool = True, config: str = 'config.yaml') -> str:
 
     _variables: list = []
 
@@ -156,7 +158,7 @@ def generate(url: str, path: str, version: str, variables: list, include: bool =
     results: str
     results = generate_header(name, version, variables)
     results += generate_include(include)
-    results += generate_locals()
+    results += generate_locals(config)
     results += generate_terraform(
         url, path, version, f'local.all["{name}"]'
     )

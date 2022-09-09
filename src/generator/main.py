@@ -27,6 +27,9 @@ def main():
         action=argparse.BooleanOptionalAction,
         default=True,
     )
+    parser.add_argument(
+        '-c', '--config', help='define the yaml config path', default="find_in_parent_folders(\"config.yaml\")"
+    )
     args = parser.parse_args()
 
     tempdir = f'{gettempdir()}/{uuid4()}'
@@ -42,6 +45,7 @@ def main():
         args.version,
         variables,
         args.include,
+        args.config
     )
 
     print(output)
