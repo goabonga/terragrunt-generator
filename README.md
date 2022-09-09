@@ -1,6 +1,6 @@
 # terragrunt-generator
 
-**terragrunt-generator** provide a way to generate a ```terragrunt.hcl``` file with documented inputs who's comming from variables exposed by terraform module.
+**terragrunt-generator** provide a way to generate a ```terragrunt.hcl``` file with documented inputs who's coming from variables exposed by terraform module.
 
 The result is easily configurable with a **yaml** file.
 ## Requirements
