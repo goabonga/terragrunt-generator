@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "terragrunt-generator"
-version = "0.1.0"
+version = "0.2.1"
 description = ""
 authors = ["Chris <goabonga@pm.me>"]
 readme = "README.md"
