@@ -21,10 +21,13 @@ def generate_header(name: str, version: str, variables: list = []) -> str:
 """
 
 
-def generate_include() -> str:
-    return """include {
-    path = "${{find_in_parent_folders()}}"
-}
+def generate_include(enable: bool = True) -> str:
+    content: str = ''
+    if enable is True:
+        content = "    path = \"${find_in_parent_folders()}\""
+    return f"""include {{
+{content}
+}}
 """
 
 
@@ -116,7 +119,7 @@ inputs = {{
 """
 
 
-def generate(url: str, path: str, version: str, variables: list) -> str:
+def generate(url: str, path: str, version: str, variables: list, include: bool = True) -> str:
 
     _variables: list = []
 
@@ -152,7 +155,7 @@ def generate(url: str, path: str, version: str, variables: list) -> str:
     )
     results: str
     results = generate_header(name, version, variables)
-    results += generate_include()
+    results += generate_include(include)
     results += generate_locals()
     results += generate_terraform(
         url, path, version, f'local.all["{name}"]'
