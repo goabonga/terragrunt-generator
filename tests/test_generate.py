@@ -14,6 +14,13 @@ def test_generate_locals():
     results = generate_locals()
     assert (
         '\nlocals {\n    all = merge(\n        yamldecode(file('
+        + '"config.yaml")),\n    )\n}\n'
+        in results
+    )
+
+    results = generate_locals("#find_in_parent_folders(\"config.yaml\")")
+    assert (
+        '\nlocals {\n    all = merge(\n        yamldecode(file('
         + 'find_in_parent_folders("config.yaml"))),\n    )\n}\n'
         in results
     )
