@@ -22,6 +22,11 @@ def main():
     parser.add_argument(
         '-p', '--path', help='define the module path if needed'
     )
+    parser.add_argument(
+        '--include', help='do no rendering the include block',
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     args = parser.parse_args()
 
     tempdir = f'{gettempdir()}/{uuid4()}'
@@ -36,6 +41,7 @@ def main():
         None if args.path is None else args.path,
         args.version,
         variables,
+        args.include,
     )
 
     print(output)

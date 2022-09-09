@@ -4,10 +4,10 @@ from generator.generate import (generate, generate_include, generate_inputs,
 
 def test_generate_include():
     results = generate_include()
-    assert (
-        'include {\n    path = "${{find_in_parent_folders()}}"\n}\n'
-        in results
-    )
+    assert 'include {\n    path = "${find_in_parent_folders()}"\n}\n' in results
+
+    results = generate_include(False)
+    assert 'include {\n\n}\n' in results
 
 
 def test_generate_locals():
