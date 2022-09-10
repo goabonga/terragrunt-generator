@@ -1,5 +1,10 @@
-from generator.generate import (generate, generate_include, generate_inputs,
-                                generate_locals, generate_terraform)
+from generator.generate import (
+    generate,
+    generate_include,
+    generate_inputs,
+    generate_locals,
+    generate_terraform,
+)
 
 
 def test_generate_include():
@@ -18,7 +23,7 @@ def test_generate_locals():
         in results
     )
 
-    results = generate_locals("#find_in_parent_folders(\"config.yaml\")")
+    results = generate_locals('#find_in_parent_folders("config.yaml")')
     assert (
         '\nlocals {\n    all = merge(\n        yamldecode(file('
         + 'find_in_parent_folders("config.yaml"))),\n    )\n}\n'
@@ -63,6 +68,8 @@ def test_generate():
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'moudles/test'
     version: str = '0.1.0'
-    results: str = generate(url, path, version, variables=variables)
+    results: str = generate(
+        url, path, version, variables, lookup='.develop["{name}"]', name='toto'
+    )
     assert f'{url}//{path}?ref={version}' in results
-    assert 'lookup(local.all["test"], "test", ' in results
+    assert 'lookup(local.all.develop["toto"], "test", ' in results
