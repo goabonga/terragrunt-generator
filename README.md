@@ -57,7 +57,7 @@ inputs = merge({
     optional = lookup(local.all["modules"], "optional", "optional")
 
 },
-  # nullable -
+  # nullable - nullable value
   (lookup(local.all["modules"], "nullable", null) == null ? {} : { nullable =  lookup(local.all["modules"], "nullable") })
 )
 

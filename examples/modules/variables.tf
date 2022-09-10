@@ -12,5 +12,5 @@ variable "optional" {
 variable "nullable" {
     type = string
     default = null
-    descrdescription = "nullable value"
+    description = "nullable value"
 }
