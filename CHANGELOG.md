@@ -1,3 +1,9 @@
+## 0.3.7 (2022-09-10)
+
+### Fix
+
+- make workflows great again
+
 ## 0.3.6 (2022-09-10)
 
 ### Fix
