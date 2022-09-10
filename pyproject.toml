@@ -18,15 +18,12 @@ isort = "^5.10.1"
 commitizen = "^2.32.5"
 flake8 = "^5.0.4"
 
+
+
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.4.1"
-changelog_start_rev= "0.4.1"
+version = "0.5.0"
 tag_format = "$version"
-version_files = [
-    "pyproject.toml:version"
-]
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
