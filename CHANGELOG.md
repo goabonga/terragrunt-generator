@@ -1,3 +1,9 @@
+## 0.3.4 (2022-09-10)
+
+### Fix
+
+- fixing workflow and configuration
+
 ## 0.3.3 (2022-09-10)
 
 ### Fix
