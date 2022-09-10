@@ -1,3 +1,9 @@
+## 0.5.4 (2022-09-10)
+
+### Fix
+
+- description error one nullable
+
 ## 0.5.3 (2022-09-10)
 
 ### Fix
