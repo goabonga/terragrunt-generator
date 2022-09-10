@@ -19,7 +19,7 @@ commitizen = "^2.32.5"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.3.0"
+version = "0.3.1"
 tag_format = "$version"
 version_files = [
   "pyproject.toml:version",

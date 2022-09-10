@@ -1,3 +1,9 @@
+## 0.3.1 (2022-09-10)
+
+### Fix
+
+- let commitizen change poetry.tool version
+
 ## 0.3.0 (2022-09-10)
 
 ### Feat
