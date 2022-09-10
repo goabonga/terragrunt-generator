@@ -21,6 +21,9 @@ commitizen = "^2.32.5"
 name = "cz_conventional_commits"
 version = "0.3.0"
 tag_format = "$version"
+version_files = [
+  "pyproject.toml:version",
+]
 
 [build-system]
 requires = ["poetry-core"]
