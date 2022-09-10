@@ -20,7 +20,7 @@ flake8 = "^5.0.4"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.3.4"
+version = "0.3.5"
 tag_format = "$version"
 
 [tool.semantic_release]
