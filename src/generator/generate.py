@@ -83,14 +83,14 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
     content_nullable: str = ''
     variables = sorted(variables, key=lambda d: d['name'], reverse=False)
     for variable in variables:
+        description = (
+            variable.get('description', '')
+            .replace('    ', '', 1)
+            .replace('\n', '\n    #')
+            .replace('\\"', '"')
+        )
         if variable.get('nullable', False) is False:
             _content: str = ''
-            description = (
-                variable.get('description', '')
-                .replace('    ', '', 1)
-                .replace('\n', '\n    #')
-                .replace('\\"', '"')
-            )
             line_doc = f"{variable.get('name')} - {description}"
             mandatory = variable.get('mandatory', False)
             line_doc += ' - required' if mandatory is True else ''

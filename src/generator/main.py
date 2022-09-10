@@ -61,7 +61,7 @@ def main():
         clone(args.url, tempdir, args.version)
 
     hcl_files: list = read_directory(
-        f"{tempdir}//{'' if args.path is None else args.path}"
+        f"{tempdir}/{'' if args.path is None else args.path}"
     )
 
     output: str = generate(
