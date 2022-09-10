@@ -1,3 +1,9 @@
+## 0.3.8 (2022-09-10)
+
+### Fix
+
+- cleaning up ci remove unused configuration
+
 ## 0.3.7 (2022-09-10)
 
 ### Fix
