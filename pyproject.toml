@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "terragrunt-generator"
-version = "0.3.2"
+version = "0.3.6"
 description = ""
 authors = ["Chris <goabonga@pm.me>"]
 readme = "README.md"
@@ -22,6 +22,9 @@ flake8 = "^5.0.4"
 name = "cz_conventional_commits"
 version = "0.3.6"
 tag_format = "$version"
+version_files = [
+    "pyproject.toml:version"
+]
 
 [tool.semantic_release]
 version_variable = [
