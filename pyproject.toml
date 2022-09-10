@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "terragrunt-generator"
-version = "0.4.0"
+version = "0.4.1"
 description = ""
 authors = ["Chris <goabonga@pm.me>"]
 readme = "README.md"
@@ -20,7 +20,7 @@ flake8 = "^5.0.4"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.4.0"
+version = "0.4.1"
 changelog_start_rev= "0.4.0"
 tag_format = "$version"
 version_files = [
