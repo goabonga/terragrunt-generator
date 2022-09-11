@@ -1,3 +1,9 @@
+## 0.6.1 (2022-09-11)
+
+### Fix
+
+- remove scheme into terraform module path for  http(s)
+
 ## 0.6.0 (2022-09-10)
 
 ### Feat
