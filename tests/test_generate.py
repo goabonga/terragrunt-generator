@@ -40,7 +40,7 @@ def test_generate_terraform():
     assert (
         results
         == '\nterraform {\n    source = lookup(local.all["test"],'
-        + ' "enabled", true) == true ? "https://gitserver.com/test/'
+        + ' "enabled", true) == true ? "gitserver.com/test/'
         + 'test.git//moudles/test?ref=0.1.0" : null\n}\n'
     )
 
@@ -71,5 +71,5 @@ def test_generate():
     results: str = generate(
         url, path, version, variables, lookup='.develop["{name}"]', name='toto'
     )
-    assert f'{url}//{path}?ref={version}' in results
+    assert f'{url.replace("https://", "").replace("http", "")}//{path}?ref={version}' in results
     assert 'lookup(local.all.develop["toto"], "test", ' in results
