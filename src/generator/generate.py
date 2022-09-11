@@ -68,7 +68,7 @@ locals {{
 
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
-    url = f'{url}{path}?ref={version}'
+    url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
     source = f'lookup({lookup}, "enabled", true) == true ? "{url}" : null'
     return f"""
 terraform {{
