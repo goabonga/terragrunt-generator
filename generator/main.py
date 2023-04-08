@@ -3,29 +3,26 @@ from distutils.dir_util import copy_tree
 from tempfile import gettempdir
 from uuid import uuid4
 
+from generator import __version__
 from generator.generate import generate
 from generator.git import clone
 from generator.reader import read_directory
 from generator.utils import is_local
 
-from . import __version__
-
 
 def main():
     parser = argparse.ArgumentParser(
         prog='terragrunt-gernerator',
-        description='generate terragrunt.hcl confirugation'
-        + ' from terraform module',
+        description='generate terragrunt.hcl confirugation' + ' from terraform module',
     )
+
     parser.add_argument(
         '-V',
         action='version',
         version=f'%(prog)s {__version__}',
     )
 
-    parser.add_argument(
-        '-u', '--url', required=True, help='the module repository url'
-    )
+    parser.add_argument('-u', '--url', required=True, help='the module repository url')
 
     parser.add_argument(
         '-v', '--version', help='the module version to use', default='main'

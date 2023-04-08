@@ -9,7 +9,6 @@ def read_file(path: str) -> dict:
         try:
             datas = hcl2.load(file)
         except Exception as error:
-            print(error)
             raise error
     return datas
 

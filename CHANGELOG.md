@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+
+- fix issues and apply good practices
+
 ## 0.6.1 (2022-09-11)
 
 ### Fix

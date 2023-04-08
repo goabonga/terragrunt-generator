@@ -2,35 +2,37 @@ import json
 
 
 def generate_header(
-    name: str, version: str, lookup: str, variables: list = []
+    name: str,
+    url: str,
+    path: str,
+    version: str,
+    lookup: str,
+    variables: list = [],
 ) -> str:
-    text: str = ''
+    text = ''
+    for var_type in ('mandatories', 'optionals', 'nullables'):
+        for variable in variables.get(var_type, []):
+            default = variable.get('default')
 
-    # for variable_values in variables:
-    for variable in variables.get('mandatories'):
-        default = variable.get('default', None)
-        text += (
-            f"#   {variable['name']}:"
-            f" {json.dumps(default) if default is not None else ''}\n"
-        )
-    for variable in variables.get('optionals'):
-        default = variable.get('default', None)
-        text += (
-            f"#   {variable['name']}:"
-            f" {json.dumps(default) if default is not None else ''}\n"
-        )
-    for variable in variables.get('nullables'):
-        default = variable.get('default', None)
-        text += (
-            f"#   # {variable['name']}:"
-            f" {json.dumps(default) if default is not None else ''}\n"
-        )
+            if var_type == 'nullables':
+                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   # {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
+            elif var_type == 'optionals':
+                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
+            else:
+                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
 
     lookup = lookup.replace('local.all', '')
     if lookup.startswith('['):
-        lookup = lookup.replace('[', '').replace(']', '').replace('"', '')
+        lookup = lookup.strip('[]').strip('"')
+
+    path = path or ''
+    url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
     return f"""# {name} {version}
+# {url}
 #
 # yaml config
 # ```
@@ -44,23 +46,37 @@ def generate_header(
 def generate_include(enable: bool = True) -> str:
     content: str = ''
     if enable is True:
-        content = '    path = "${find_in_parent_folders()}"'
+        content = '    path = find_in_parent_folders()'
+
     return f"""include {{
 {content}
 }}
 """
 
 
-def generate_locals(filename: str = 'config.yaml') -> str:
+def generate_locals(
+    filename: str = 'config.yaml',
+    url: str = None,
+    path: str = None,
+    version: str = None,
+) -> str:
     filename = (
         f"{filename.removeprefix('#')}"
         if filename.startswith('#') is True
-        else f'"{filename}"'
+        else f'{filename}'
     )
+
     return f"""
 locals {{
+    module = {{
+        repository = "{url.replace("https://", "").replace("http://", "")}"
+        path = {f'"//{path}"' if path != None else "null"}
+        version = "{version}"
+        source =  "${{local.module.repository}}${{local.module.path != null ? local.module.path : \'\'}}?ref=${{local.module.version}}"
+    }}
+    environment = get_env("ENV", "development")
     all = merge(
-        yamldecode(file({filename})),
+        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
     )
 }}
 """
@@ -69,7 +85,8 @@ locals {{
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
-    source = f'lookup({lookup}, "enabled", true) == true ? "{url}" : null'
+    source = f'lookup({lookup}, "enabled", true) == true ? local.module.source : null'
+
     return f"""
 terraform {{
     source = {source}
@@ -89,8 +106,10 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
             .replace('\n', '\n    #')
             .replace('\\"', '"')
         )
+
         if variable.get('nullable', False) is False:
             _content: str = ''
+
             line_doc = f"{variable.get('name')} - {description}"
             mandatory = variable.get('mandatory', False)
             line_doc += ' - required' if mandatory is True else ''
@@ -101,7 +120,7 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
 
             value = ''
             if variable.get('type', None) == 'string':
-                value = f', "{variable.get("default")}"'
+                value = f', "{variable.get("default", "")}"'
             else:
                 value = f', {json.dumps(variable.get("default"))}'
             line_content += value
@@ -123,48 +142,24 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
             content_nullable += '),'
 
     if content_nullable != '':
-
         return f"""
 inputs = merge({{
-{content_fisrt}{content_next}
+{content_fisrt}{content_next.rstrip(content_next[-1])}
 }},{content_nullable.rstrip(content_nullable[-1])}
-)
-"""
+)"""
 
     return f"""
 inputs = {{
-{content_fisrt}{content_next}
-}}
-"""
+{content_fisrt}{content_next.rstrip(content_next[-1])}
+}}"""
 
 
 def parse_variables(variables: list) -> list:
-    """
-    this function parse raw hcl variables and produce a clear objects list
-
-    Args:
-        variables (list): the raw hcl variables list
-
-    Returns:
-        list: the variables object list
-    """
     outputs: list = []
 
     mandatories: list = []
     optionals: list = []
     nullables: list = []
-
-    #   def set_name(variable: dict, name: str) -> dict:
-    #       return variable
-    #
-    #   def set_type(variable: dict) -> dict:
-    #       return variable
-    #
-    #   def is_mandatory(variable: dict) -> dict:
-    #       return variable
-    #
-    #   def is_nullable(variable: dict) -> dict:
-    #       return variable
 
     for variable in variables:
         for k in variable:
@@ -210,7 +205,6 @@ def generate(
     lookup: str = '["{name}"]',
     name: str = None,
 ) -> str:
-    # parse variables
     variables, variables_object = parse_variables(hcl_files['variable'])
 
     name = (
@@ -225,9 +219,9 @@ def generate(
 
     lookup = f'local.all{lookup.format(name=name,)}'
     results: str
-    results = generate_header(name, version, lookup, variables_object)
+    results = generate_header(name, url, path, version, lookup, variables_object)
     results += generate_include(include)
-    results += generate_locals(config)
+    results += generate_locals(config, url, path, version)
     results += generate_terraform(url, path, version, lookup)
     results += generate_inputs(variables, lookup)
     return results

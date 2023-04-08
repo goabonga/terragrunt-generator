@@ -9,17 +9,20 @@ jobs:
   bump_version:
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     runs-on: ubuntu-latest
-    name: "Bump version and create changelog with commitizen"
+    name: Bump version, create changelog and publish module
     steps:
-      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: "${{ secrets.GITHUB_TOKEN }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: commitizen-tools/commitizen-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          changelog_increment_filename: body.md
+          changelog_increment_filename: changes.md
+          changelog: true
+          debug: true
 
       - uses: actions/setup-python@v3
         with:
@@ -35,8 +38,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v1
         with:
-          body_path: "body.md"
-          tag_name: "${{ env.REVISION }}"
+          body_path: changes.md
+          tag_name: ${{ env.REVISION }}
           files: dist/*
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
