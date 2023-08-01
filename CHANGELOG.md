@@ -1,3 +1,9 @@
+## 0.6.3 (2023-08-01)
+
+### Fix
+
+- issue issues with multiline descriptions
+
 ## 0.6.2 (2023-04-08)
 
 ### Fix
