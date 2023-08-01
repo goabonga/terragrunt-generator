@@ -10,23 +10,23 @@ def generate_header(
     variables: list = [],
 ) -> str:
     text = ''
+
     for var_type in ('mandatories', 'optionals', 'nullables'):
         for variable in variables.get(var_type, []):
             default = variable.get('default')
-            description = variable.get('description', '').replace('    ', '', 1).replace('\n', '\n#   #').replace('\\"', '"')
-
+            description = (
+                variable.get('description', '')
+                .replace('    ', '', 1)
+                .replace('\n', '\n#   #')
+                .replace('\\"', '"')
+            )
+            text += f"#   # {variable['name']} - {description}\n"
             if var_type == 'nullables':
-                text += f"#   # {variable['name']} - {description}\n"
                 text += f"#   # {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
-            elif var_type == 'optionals':
-                text += f"#   # {variable['name']} - {description}\n"
-                text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
             else:
-                text += f"#   # {variable['name']} - {description}\n"
                 text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
 
     lookup = lookup.replace('local.all', '')
-    
     path = path or ''
     url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
@@ -51,21 +51,14 @@ include {{
 {content}
 }}
 """
-    return ""
+    return ''
 
 
 def generate_locals(
-    filename: str = 'config.yaml',
     url: str = None,
     path: str = None,
     version: str = None,
 ) -> str:
-    filename = (
-        f"{filename.removeprefix('#')}"
-        if filename.startswith('#') is True
-        else f'{filename}'
-    )
-
     return f"""
 locals {{
     module = {{
@@ -86,9 +79,6 @@ def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
 
-    if lookup.startswith('['):
-        lookup = lookup.strip('[]').strip('"')
-
     source = f'lookup(local.all.{lookup}, "enabled", true) == true ? local.module.source : null'
 
     return f"""
@@ -103,16 +93,14 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
     content_next: str = ''
     content_nullable: str = ''
     variables = sorted(variables, key=lambda d: d['name'], reverse=False)
-        
-    for variable in variables:
 
+    for variable in variables:
         description = (
             variable.get('description', '')
             .replace('    ', '')
             .replace('\n', '\n    # ')
             .replace('\\"', '"')
         )
-
 
         if variable.get('nullable', False) is False:
             _content: str = ''
@@ -207,10 +195,9 @@ def generate(
     url: str,
     path: str,
     version: str,
+    lookup: str,
     hcl_files: list,
     include: bool = True,
-    config: str = 'config.yaml',
-    lookup: str = '["{name}"]',
     name: str = None,
 ) -> str:
     variables, variables_object = parse_variables(hcl_files['variable'])
@@ -225,11 +212,11 @@ def generate(
         else name
     )
 
-    #lookup = f'local.all{lookup.format(name=name,)}'
+    # lookup = f'local.all{lookup.format(name=name,)}'
     results: str
     results = generate_header(name, url, path, version, lookup, variables_object)
     results += generate_include(include)
-    results += generate_locals(config, url, path, version)
+    results += generate_locals(url, path, version)
     results += generate_terraform(url, path, version, lookup)
     results += generate_inputs(variables, lookup)
     return results

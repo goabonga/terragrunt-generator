@@ -29,11 +29,10 @@ def test_generate_locals():
     # Scenario 1
     # Given the generate_locals function is called with filename="", url="https://gitserver.com/test/test.git", path="modules/test", and version="0.1.0"
     # When the function is executed
-    filename = ''
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
     version: str = '0.1.0'
-    results = generate_locals(filename, url, path, version)
+    results = generate_locals(url, path, version)
 
     # Then it should return a string that includes the expected "locals" block
     expected = """

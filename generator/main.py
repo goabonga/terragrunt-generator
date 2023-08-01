@@ -38,14 +38,10 @@ def main():
     )
 
     parser.add_argument(
-        '-c',
-        '--config',
-        help='define the yaml config path',
-        default='find_in_parent_folders("config.yaml")',
-    )
-
-    parser.add_argument(
-        '-l', '--lookup', help='define the lookup path', default='["{name}"]'
+        '-l',
+        '--lookup',
+        help='define the lookup path'
+        # , default='["{name}"]'
     )
 
     args = parser.parse_args()
@@ -65,10 +61,9 @@ def main():
         args.url,
         None if args.path is None else args.path,
         args.version,
+        args.lookup,
         hcl_files,
         args.include,
-        args.config,
-        args.lookup,
     )
 
     print(output)
