@@ -44,7 +44,7 @@ locals {
         version = "0.1.0"
         source =  "${local.module.repository}${local.module.path != null ? local.module.path : ''}?ref=${local.module.version}"
     }
-    environment = get_env("ENV", "development")
+    environment = get_env("CONFIG", "test")
     all = merge(
         yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
     )
@@ -61,7 +61,7 @@ def test_generate_terraform():
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
     version: str = '0.1.0'
-    lookup: str = 'local.all.test'
+    lookup: str = 'test'
     results = generate_terraform(url, path, version, lookup)
 
     # Then it should return a string that includes the expected "terraform" block
@@ -86,7 +86,7 @@ def test_generate_inputs():
             'default': 'hello',
         }
     ]
-    lookup: str = 'local.all.test'
+    lookup: str = 'test'
     results = generate_inputs(variables, lookup)
 
     # Then it should return a string that includes the expected "inputs" block

@@ -74,7 +74,7 @@ locals {{
         version = "{version}"
         source =  "${{local.module.repository}}${{local.module.path != null ? local.module.path : \'\'}}?ref=${{local.module.version}}"
     }}
-    environment = get_env("ENV", "development")
+    environment = get_env("CONFIG", "test")
     all = merge(
         yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
     )
@@ -89,7 +89,7 @@ def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     if lookup.startswith('['):
         lookup = lookup.strip('[]').strip('"')
 
-    source = f'lookup({lookup}, "enabled", true) == true ? local.module.source : null'
+    source = f'lookup(local.all.{lookup}, "enabled", true) == true ? local.module.source : null'
 
     return f"""
 terraform {{
@@ -124,7 +124,7 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
             line_content = f"{variable.get('name')} = "
             name = variable.get('name')
 
-            line_content += f'lookup({lookup}, "{name}"'
+            line_content += f'lookup(local.all.{lookup}, "{name}"'
 
             value = ''
             if variable.get('type', None) == 'string':
