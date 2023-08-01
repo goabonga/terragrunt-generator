@@ -1,3 +1,9 @@
+## 0.6.4 (2023-08-01)
+
+### Fix
+
+- lookup implementation should be neutral
+
 ## 0.6.3 (2023-08-01)
 
 ### Fix
