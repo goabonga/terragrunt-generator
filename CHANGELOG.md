@@ -1,3 +1,9 @@
+## 0.6.5 (2023-08-01)
+
+### Fix
+
+- issues with generator for nullable inputs
+
 ## 0.6.4 (2023-08-01)
 
 ### Fix
