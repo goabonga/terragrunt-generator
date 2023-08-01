@@ -284,21 +284,21 @@ inputs = merge({
     vpc_service_control_sleep_duration = lookup(local.all.project, "vpc_service_control_sleep_duration", "5s")
 },
   # budget_alert_pubsub_topic - The name of the Cloud Pub/Sub topic where budget related messages will be published, in the form of `projects/{project_id}/topics/{topic_id}`
-  (lookup(project, "budget_alert_pubsub_topic", null) == null ? {} : { budget_alert_pubsub_topic =  lookup(project, "budget_alert_pubsub_topic") }),
+  (lookup(local.all.project, "budget_alert_pubsub_topic", null) == null ? {} : { budget_alert_pubsub_topic =  lookup(local.all.project, "budget_alert_pubsub_topic") }),
   # budget_amount - The amount to use for a budget alert
-  (lookup(project, "budget_amount", null) == null ? {} : { budget_amount =  lookup(project, "budget_amount") }),
+  (lookup(local.all.project, "budget_amount", null) == null ? {} : { budget_amount =  lookup(local.all.project, "budget_amount") }),
   # budget_calendar_period - Specifies the calendar period for the budget. Possible values are MONTH, QUARTER, YEAR, CALENDAR_PERIOD_UNSPECIFIED, CUSTOM. custom_period_start_date and custom_period_end_date must be set if CUSTOM
-  (lookup(project, "budget_calendar_period", null) == null ? {} : { budget_calendar_period =  lookup(project, "budget_calendar_period") }),
+  (lookup(local.all.project, "budget_calendar_period", null) == null ? {} : { budget_calendar_period =  lookup(local.all.project, "budget_calendar_period") }),
   # budget_custom_period_end_date - Specifies the end date (DD-MM-YYYY) for the calendar_period CUSTOM
-  (lookup(project, "budget_custom_period_end_date", null) == null ? {} : { budget_custom_period_end_date =  lookup(project, "budget_custom_period_end_date") }),
+  (lookup(local.all.project, "budget_custom_period_end_date", null) == null ? {} : { budget_custom_period_end_date =  lookup(local.all.project, "budget_custom_period_end_date") }),
   # budget_custom_period_start_date - Specifies the start date (DD-MM-YYYY) for the calendar_period CUSTOM
-  (lookup(project, "budget_custom_period_start_date", null) == null ? {} : { budget_custom_period_start_date =  lookup(project, "budget_custom_period_start_date") }),
+  (lookup(local.all.project, "budget_custom_period_start_date", null) == null ? {} : { budget_custom_period_start_date =  lookup(local.all.project, "budget_custom_period_start_date") }),
   # budget_display_name - The display name of the budget. If not set defaults to `Budget For <projects[0]|All Projects>`
-  (lookup(project, "budget_display_name", null) == null ? {} : { budget_display_name =  lookup(project, "budget_display_name") }),
+  (lookup(local.all.project, "budget_display_name", null) == null ? {} : { budget_display_name =  lookup(local.all.project, "budget_display_name") }),
   # random_project_id_length - Sets the length of `random_project_id` to the provided length, and uses a `random_string` for a larger collusion domain.  Recommended for use with CI.
-  (lookup(project, "random_project_id_length", null) == null ? {} : { random_project_id_length =  lookup(project, "random_project_id_length") }),
+  (lookup(local.all.project, "random_project_id_length", null) == null ? {} : { random_project_id_length =  lookup(local.all.project, "random_project_id_length") }),
   # vpc_service_control_perimeter_name - The name of a VPC Service Control Perimeter to add the created project to
-  (lookup(project, "vpc_service_control_perimeter_name", null) == null ? {} : { vpc_service_control_perimeter_name =  lookup(project, "vpc_service_control_perimeter_name") })
+  (lookup(local.all.project, "vpc_service_control_perimeter_name", null) == null ? {} : { vpc_service_control_perimeter_name =  lookup(local.all.project, "vpc_service_control_perimeter_name") })
 )
 
 ```

@@ -132,9 +132,9 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
         else:
             name = variable.get('name')
             content_nullable += f'\n  # {name} - {description}'
-            content_nullable += f'\n  (lookup({lookup}, "{name}", null)'
+            content_nullable += f'\n  (lookup(local.all.{lookup}, "{name}", null)'
             content_nullable += ' == null ? {} : '
-            content_nullable += f'{{ {name} =  lookup({lookup}, "{name}") }}'
+            content_nullable += f'{{ {name} =  lookup(local.all.{lookup}, "{name}") }}'
             content_nullable += '),'
 
     if content_nullable != '':
