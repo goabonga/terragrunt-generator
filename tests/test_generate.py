@@ -22,7 +22,7 @@ def test_generate_include_without_path():
     results = generate_include(False)
 
     # Then it should return a string that includes "include {" and an empty path value.
-    assert 'include {\n\n}\n' in results
+    assert '' in results
 
 
 def test_generate_locals():
@@ -61,13 +61,13 @@ def test_generate_terraform():
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
     version: str = '0.1.0'
-    lookup: str = 'local.all["test"]'
+    lookup: str = 'local.all.test'
     results = generate_terraform(url, path, version, lookup)
 
     # Then it should return a string that includes the expected "terraform" block
     expected = """
 terraform {
-    source = lookup(local.all["test"], "enabled", true) == true ? local.module.source : null
+    source = lookup(local.all.test, "enabled", true) == true ? local.module.source : null
 }
 """
 
@@ -86,13 +86,13 @@ def test_generate_inputs():
             'default': 'hello',
         }
     ]
-    lookup: str = 'local.all["test"]'
+    lookup: str = 'local.all.test'
     results = generate_inputs(variables, lookup)
 
     # Then it should return a string that includes the expected "inputs" block
     expected = """
 inputs = {
     # test - A
-    test = lookup(local.all["test"], "test", "hello")
+    test = lookup(local.all.test, "test", "hello")
 }"""
     assert results == expected

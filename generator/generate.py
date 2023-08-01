@@ -13,21 +13,20 @@ def generate_header(
     for var_type in ('mandatories', 'optionals', 'nullables'):
         for variable in variables.get(var_type, []):
             default = variable.get('default')
+            description = variable.get('description', '').replace('    ', '', 1).replace('\n', '\n#   #').replace('\\"', '"')
 
             if var_type == 'nullables':
-                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   # {variable['name']} - {description}\n"
                 text += f"#   # {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
             elif var_type == 'optionals':
-                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   # {variable['name']} - {description}\n"
                 text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
             else:
-                text += f"#   # {variable['name']} - {variable['description']}\n"
+                text += f"#   # {variable['name']} - {description}\n"
                 text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
 
     lookup = lookup.replace('local.all', '')
-    if lookup.startswith('['):
-        lookup = lookup.strip('[]').strip('"')
-
+    
     path = path or ''
     url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
@@ -47,11 +46,12 @@ def generate_include(enable: bool = True) -> str:
     content: str = ''
     if enable is True:
         content = '    path = find_in_parent_folders()'
-
-    return f"""include {{
+        return f"""
+include {{
 {content}
 }}
 """
+    return ""
 
 
 def generate_locals(
@@ -85,6 +85,10 @@ locals {{
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
+
+    if lookup.startswith('['):
+        lookup = lookup.strip('[]').strip('"')
+
     source = f'lookup({lookup}, "enabled", true) == true ? local.module.source : null'
 
     return f"""
@@ -99,13 +103,16 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
     content_next: str = ''
     content_nullable: str = ''
     variables = sorted(variables, key=lambda d: d['name'], reverse=False)
+        
     for variable in variables:
+
         description = (
             variable.get('description', '')
-            .replace('    ', '', 1)
-            .replace('\n', '\n    #')
+            .replace('    ', '')
+            .replace('\n', '\n    # ')
             .replace('\\"', '"')
         )
+
 
         if variable.get('nullable', False) is False:
             _content: str = ''
@@ -116,6 +123,7 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
 
             line_content = f"{variable.get('name')} = "
             name = variable.get('name')
+
             line_content += f'lookup({lookup}, "{name}"'
 
             value = ''
@@ -217,7 +225,7 @@ def generate(
         else name
     )
 
-    lookup = f'local.all{lookup.format(name=name,)}'
+    #lookup = f'local.all{lookup.format(name=name,)}'
     results: str
     results = generate_header(name, url, path, version, lookup, variables_object)
     results += generate_include(include)
