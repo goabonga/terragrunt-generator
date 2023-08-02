@@ -1,12 +1,9 @@
-name: bump
+name: pytest
 
-on:
-  push:
-    branches:
-      - refacto
+on: [push, pull_request]
 
 jobs:
-  bump_version:
+  pytest:
     runs-on: ubuntu-latest
     name: "Test application"
     steps:
@@ -22,8 +19,11 @@ jobs:
 
       - run: python -m pip install --upgrade build --user
 
-      - run: ls
-
       - run: make init
 
       - run: make test
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

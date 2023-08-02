@@ -1,5 +1,8 @@
 # terragrunt-generator
 
+[![codecov](https://codecov.io/gh/goabonga/terragrunt-generator/branch/main/graph/badge.svg?token=LZYOP61FF7)](https://codecov.io/gh/goabonga/terragrunt-generator)
+
+
 **terragrunt-generator** provide a way to generate a ```terragrunt.hcl``` file with documented inputs who's coming from variables exposed by terraform module.
 
 The result is easily configurable with a **yaml** file.

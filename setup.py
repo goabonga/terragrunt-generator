@@ -18,6 +18,7 @@ setup(
     extras_require={
         'dev': [
             'pytest==7.1.3',
+            'pytest-cov==4.1.0',
             'black==23.3.0',
             'isort==5.12.0',
             'commitizen==2.42.1',
