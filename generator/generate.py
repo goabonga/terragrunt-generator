@@ -13,8 +13,7 @@ def generate_header(
         'nullables': {},
     },
 ) -> str:
-    text = ''
-
+    text: str = ''
     for var_type in ('mandatories', 'optionals', 'nullables'):
         for variable in variables.get(var_type, []):
             default = variable.get('default')
@@ -82,9 +81,7 @@ locals {{
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
-
     source = f'lookup(local.all.{lookup}, "enabled", true) == true ? local.module.source : null'
-
     return f"""
 terraform {{
     source = {source}
@@ -96,8 +93,7 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
     content_fisrt: str = ''
     content_next: str = ''
     content_nullable: str = ''
-    variables = sorted(variables, key=lambda d: d['name'], reverse=False)
-
+    variables: list = sorted(variables, key=lambda d: d['name'], reverse=False)
     for variable in variables:
         description = (
             variable.get('description', '')
@@ -105,27 +101,21 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
             .replace('\n', '\n    # ')
             .replace('\\"', '"')
         )
-
         if variable.get('nullable', False) is False:
             _content: str = ''
-
-            line_doc = f"{variable.get('name')} - {description}"
+            line_doc: str = f"{variable.get('name')} - {description}"
             mandatory = variable.get('mandatory', False)
             line_doc += ' - required' if mandatory is True else ''
-
-            line_content = f"{variable.get('name')} = "
+            line_content: str = f"{variable.get('name')} = "
             name = variable.get('name')
-
             line_content += f'lookup(local.all.{lookup}, "{name}"'
-
-            value = ''
+            value: str = ''
             if variable.get('type', None) == 'string':
                 value = f', "{variable.get("default", "")}"'
             else:
                 value = f', {json.dumps(variable.get("default"))}'
             line_content += value
             line_content += ')'
-
             _content = f"""    # {line_doc}
     {line_content}
 """
@@ -134,7 +124,7 @@ def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
             else:
                 content_next += _content
         else:
-            name = variable.get('name')
+            name: str = variable.get('name')
             content_nullable += f'\n  # {name} - {description}'
             content_nullable += f'\n  (lookup(local.all.{lookup}, "{name}", null)'
             content_nullable += ' == null ? {} : '
@@ -156,19 +146,14 @@ inputs = {{
 
 def parse_variables(variables: list) -> list:
     outputs: list = []
-
     mandatories: list = []
     optionals: list = []
     nullables: list = []
-
     for variable in variables:
         for k in variable:
             v: dict = variable[k].copy()
-            # reformat variable type
             if v.get('type', None) is not None:
                 v['type'] = v['type'].replace('${', '').replace('}', '')
-            # define if is mandatory or nullable
-
             if 'default' not in list(v.keys()):
                 v['mandatory'] = True
                 v['nullable'] = False
@@ -178,9 +163,7 @@ def parse_variables(variables: list) -> list:
             else:
                 v['mandatory'] = False
                 v['nullable'] = False
-            # set name
             v = v | {'name': k}
-            # add object to outputs
             if v.get('mandatory') is True:
                 mandatories.append(v)
             if v.get('nullable') is True:
@@ -188,7 +171,6 @@ def parse_variables(variables: list) -> list:
             if v.get('mandatory') is False and v.get('nullable') is False:
                 optionals.append(v)
             outputs.append(v)
-
     return outputs, {
         'mandatories': mandatories,
         'optionals': optionals,
@@ -206,7 +188,6 @@ def generate(
     name: str = None,
 ) -> str:
     variables, variables_object = parse_variables(hcl_files['variable'])
-
     name = (
         (
             path.split('/')[-1:][0]
@@ -216,8 +197,6 @@ def generate(
         if name is None
         else name
     )
-
-    # lookup = f'local.all{lookup.format(name=name,)}'
     results: str
     results = generate_header(name, url, path, version, lookup, variables_object)
     results += generate_include(include)

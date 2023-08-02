@@ -33,25 +33,29 @@ parser.add_argument(
     default=True,
 )
 
-parser.add_argument(
-    '-l',
-    '--lookup',
-    help='define the lookup path'
-    # , default='["{name}"]'
-)
+parser.add_argument('-l', '--lookup', help='define the lookup path')
+
+
+def create_working_directory() -> str:
+    tempdir = f'{gettempdir()}/{uuid4()}'
+    return tempdir
+
+
+def copy_terraform_module(url: str, version: str, path: str):
+    if is_local(url):
+        copy_tree(url, path)
+    else:
+        clone(url, path, version)
 
 
 def main(args=None):
-    args = parser.parse_args(args)
+    args: map = parser.parse_args(args)
 
-    tempdir = f'{gettempdir()}/{uuid4()}'
+    tempdir: str = create_working_directory()
 
-    if is_local(args.url):
-        copy_tree(args.url, tempdir)
-    else:
-        clone(args.url, tempdir, args.version)
+    copy_terraform_module(args.url, args.version, tempdir)
 
-    hcl_files: list = read_directory(
+    hcl_files: dict = read_directory(
         f"{tempdir}/{'' if args.path is None else args.path}"
     )
 
