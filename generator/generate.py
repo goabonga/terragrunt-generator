@@ -7,7 +7,11 @@ def generate_header(
     path: str,
     version: str,
     lookup: str,
-    variables: list = [],
+    variables: map = {
+        'mandatories': {},
+        'optionals': {},
+        'nullables': {},
+    },
 ) -> str:
     text = ''
 
@@ -184,6 +188,7 @@ def parse_variables(variables: list) -> list:
             if v.get('mandatory') is False and v.get('nullable') is False:
                 optionals.append(v)
             outputs.append(v)
+
     return outputs, {
         'mandatories': mandatories,
         'optionals': optionals,
