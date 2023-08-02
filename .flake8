@@ -3,3 +3,5 @@ ignore = E501
 max-complexity = 10
 max-line-length = 89
 statistics = true
+per-file-ignores =
+    tests/*:W291

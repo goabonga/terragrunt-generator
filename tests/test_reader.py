@@ -1,4 +1,4 @@
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from generator.reader import read_directory, read_file
 
@@ -16,6 +16,18 @@ def test_read_file(mock_file):
     results = read_file(path=path)
     mock_file.assert_called_with(path)
     assert results == {'variable': [{'test': {'default': '', 'type': 'string'}}]}
+
+
+@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch('hcl2.load', MagicMock(side_effect=Exception('mocked error')))
+def test_read_file_except(mock_file):
+    path = 'path/to/open'
+    error = None
+    try:
+        read_file(path=path)
+    except Exception as e:
+        error = e
+    assert error is not None
 
 
 @patch('os.listdir', return_value=['test.tf'])

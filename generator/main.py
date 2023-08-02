@@ -9,42 +9,40 @@ from generator.git import clone
 from generator.reader import read_directory
 from generator.utils import is_local
 
+parser = argparse.ArgumentParser(
+    prog='terragrunt-gernerator',
+    description='generate terragrunt.hcl confirugation' + ' from terraform module',
+)
 
-def main():
-    parser = argparse.ArgumentParser(
-        prog='terragrunt-gernerator',
-        description='generate terragrunt.hcl confirugation' + ' from terraform module',
-    )
+parser.add_argument(
+    '-V',
+    action='version',
+    version=f'%(prog)s {__version__}',
+)
 
-    parser.add_argument(
-        '-V',
-        action='version',
-        version=f'%(prog)s {__version__}',
-    )
+parser.add_argument('-u', '--url', required=True, help='the module repository url')
 
-    parser.add_argument('-u', '--url', required=True, help='the module repository url')
+parser.add_argument('-v', '--version', help='the module version to use', default='main')
 
-    parser.add_argument(
-        '-v', '--version', help='the module version to use', default='main'
-    )
+parser.add_argument('-p', '--path', help='define the module path if needed')
 
-    parser.add_argument('-p', '--path', help='define the module path if needed')
+parser.add_argument(
+    '--include',
+    help='do no rendering the include block',
+    action=argparse.BooleanOptionalAction,
+    default=True,
+)
 
-    parser.add_argument(
-        '--include',
-        help='do no rendering the include block',
-        action=argparse.BooleanOptionalAction,
-        default=True,
-    )
+parser.add_argument(
+    '-l',
+    '--lookup',
+    help='define the lookup path'
+    # , default='["{name}"]'
+)
 
-    parser.add_argument(
-        '-l',
-        '--lookup',
-        help='define the lookup path'
-        # , default='["{name}"]'
-    )
 
-    args = parser.parse_args()
+def main(args=None):
+    args = parser.parse_args(args)
 
     tempdir = f'{gettempdir()}/{uuid4()}'
 
