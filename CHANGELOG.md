@@ -1,3 +1,9 @@
+## 0.7.1 (2023-08-03)
+
+### Fix
+
+- cleaning up code and fix issues
+
 ## 0.7.0 (2023-08-02)
 
 ### Feat
