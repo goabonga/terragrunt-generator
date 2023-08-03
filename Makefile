@@ -10,7 +10,7 @@ init:
 	./.venv/bin/python -m pip install -e ./\[dev\]
 
 test:
-	./.venv/bin/python -m pytest --cov-config=.coveragerc --cov --cov-report=json --cov-report=term --cov-report=html
+	./.venv/bin/python -m pytest --cov-config=.coveragerc --cov --cov-report=json --cov-report=term --cov-report=html -vv
 
 lint:
 	./.venv/bin/isort ./generator ./tests

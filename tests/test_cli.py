@@ -37,8 +37,8 @@ def test_main_local(capsys):
 
     print(results)
 
-    expected = """#  0.0.1
-# ./examples/modules//tree/0.0.1/
+    expected = """# modules 0.0.1
+# ./examples/modules/
 #
 # yaml config
 # ```
@@ -47,7 +47,7 @@ def test_main_local(capsys):
 #   # required - required value
 #   required: 
 #   # optional - optional value
-#   optional: "optional"
+#   # optional: "optional"
 #   # nullable - nullable value
 #   # nullable: 
 # ```
@@ -58,20 +58,14 @@ include {
 }
 
 locals {
-    module = {
-        repository = "./examples/modules/"
-        path = null
-        version = "0.0.1"
-        source =  "${local.module.repository}${local.module.path != null ? local.module.path : ''}?ref=${local.module.version}"
-    }
-    environment = get_env("CONFIG", "test")
+    source = "{find_in_parent_folders("./examples/modules/")}"
     all = merge(
-        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
 }
 
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.module.source : null
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
 }
 
 inputs = merge({
@@ -113,7 +107,7 @@ def test_main_repo(mock_git, mock_dir, mock_file, capsys):
 # test:
 #   enabled: true
 #   # test - 
-#   test: 
+#   # # test: 
 # ```
 #
 
@@ -122,20 +116,14 @@ include {
 }
 
 locals {
-    module = {
-        repository = "gitserver.com/test/test.git"
-        path = null
-        version = "0.0.1"
-        source =  "${local.module.repository}${local.module.path != null ? local.module.path : ''}?ref=${local.module.version}"
-    }
-    environment = get_env("CONFIG", "test")
+    source = "gitserver.com/test/test.git?ref=0.0.1"
     all = merge(
-        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
 }
 
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.module.source : null
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
 }
 
 inputs = {
