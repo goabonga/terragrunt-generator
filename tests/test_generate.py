@@ -34,13 +34,106 @@ def test_generate_header():
 #   # mandatories - mandatories
 #   mandatories: 
 #   # optionals - optionals
-#   optionals: 
+#   # optionals: 
 #   # nullables - nullables
 #   # nullables: 
 # ```
 #
 """
     assert results == expected
+
+
+def test_generate_header_local_module():
+    url: str = './test/test/'
+    path: str = None
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+    variables = {
+        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
+        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
+        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+    }
+    results = generate_header(name, url, path, version, lookup, variables)
+    excepted = """# test 0.1.0
+# ./test/test/
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # mandatories - mandatories
+#   mandatories: 
+#   # optionals - optionals
+#   # optionals: 
+#   # nullables - nullables
+#   # nullables: 
+# ```
+#
+"""
+    assert excepted == results
+
+
+def test_generate_header_module():
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = None
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+    variables = {
+        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
+        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
+        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+    }
+    results = generate_header(name, url, path, version, lookup, variables)
+    excepted = """# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # mandatories - mandatories
+#   mandatories: 
+#   # optionals - optionals
+#   # optionals: 
+#   # nullables - nullables
+#   # nullables: 
+# ```
+#
+"""
+    assert excepted == results
+
+
+def test_generate_header_submodule():
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = 'modules/test'
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+    variables = {
+        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
+        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
+        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+    }
+    results = generate_header(name, url, path, version, lookup, variables)
+    excepted = """# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/modules/test
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # mandatories - mandatories
+#   mandatories: 
+#   # optionals - optionals
+#   # optionals: 
+#   # nullables - nullables
+#   # nullables: 
+# ```
+#
+"""
+    assert excepted == results
 
 
 def test_generate_include_with_path():
@@ -58,21 +151,33 @@ def test_generate_include_without_path():
 
 def test_generate_locals():
     url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
+    path = None
     version: str = '0.1.0'
     results = generate_locals(url, path, version)
+    print(results)
 
     expected = """
 locals {
-    module = {
-        repository = "gitserver.com/test/test.git"
-        path = "//modules/test"
-        version = "0.1.0"
-        source =  "${local.module.repository}${local.module.path != null ? local.module.path : ''}?ref=${local.module.version}"
-    }
-    environment = get_env("CONFIG", "test")
+    source = "gitserver.com/test/test.git?ref=0.1.0"
     all = merge(
-        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
+    )
+}
+"""
+
+    assert results == expected
+
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = 'modules/test'
+    version: str = '0.1.0'
+    results = generate_locals(url, path, version)
+    print(results)
+
+    expected = """
+locals {
+    source = "gitserver.com/test/test.git//modules/test?ref=0.1.0"
+    all = merge(
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
 }
 """
@@ -89,7 +194,7 @@ def test_generate_terraform():
 
     expected = """
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.module.source : null
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
 }
 """
 
@@ -246,6 +351,91 @@ def test_generate():
     include: bool = True
 
     url: str = 'https://gitserver.com/test/test.git'
+    path: str = None
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+
+    hcl_files = {
+        'variable': [
+            {
+                0: {
+                    'name': 'test',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': None,
+                },
+                1: {
+                    'name': 'test1',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': 'hello',
+                },
+                2: {
+                    'name': 'test2',
+                    'description': 'A',
+                    'type': 'string',
+                },
+            }
+        ]
+    }
+
+    results = generate(
+        url,
+        path,
+        version,
+        lookup,
+        hcl_files,
+        include,
+        name,
+    )
+
+    expected = '''# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # 2 - A
+#   2: 
+#   # 1 - A
+#   # 1: "hello"
+#   # 0 - A
+#   # 0: 
+# ```
+#
+
+include {
+    path = find_in_parent_folders()
+}
+
+locals {
+    source = "gitserver.com/test/test.git?ref=0.1.0"
+    all = merge(
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
+    )
+}
+
+terraform {
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
+}
+
+inputs = merge({
+    # 2 - A - required
+    2 = lookup(local.all.test, "2", "")
+    # 1 - A
+    1 = lookup(local.all.test, "1", "hello")
+},
+  # 0 - A
+  (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
+)'''
+    assert results == expected
+
+    hcl_files: list
+    include: bool = True
+
+    url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
     version: str = '0.1.0'
     lookup: str = 'test'
@@ -297,7 +487,7 @@ def test_generate():
 #   # 2 - A
 #   2: 
 #   # 1 - A
-#   1: "hello"
+#   # 1: "hello"
 #   # 0 - A
 #   # 0: 
 # ```
@@ -308,20 +498,101 @@ include {
 }
 
 locals {
-    module = {
-        repository = "gitserver.com/test/test.git"
-        path = "//modules/test"
-        version = "0.1.0"
-        source =  "${local.module.repository}${local.module.path != null ? local.module.path : ''}?ref=${local.module.version}"
-    }
-    environment = get_env("CONFIG", "test")
+    source = "gitserver.com/test/test.git//modules/test?ref=0.1.0"
     all = merge(
-        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
 }
 
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.module.source : null
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
+}
+
+inputs = merge({
+    # 2 - A - required
+    2 = lookup(local.all.test, "2", "")
+    # 1 - A
+    1 = lookup(local.all.test, "1", "hello")
+},
+  # 0 - A
+  (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
+)'''
+    assert results == expected
+
+    hcl_files: list
+    include: bool = True
+
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = 'modules/test'
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+
+    hcl_files = {
+        'variable': [
+            {
+                0: {
+                    'name': 'test',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': None,
+                },
+                1: {
+                    'name': 'test1',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': 'hello',
+                },
+                2: {
+                    'name': 'test2',
+                    'description': 'A',
+                    'type': 'string',
+                },
+            }
+        ]
+    }
+
+    results = generate(
+        url,
+        path,
+        version,
+        lookup,
+        hcl_files,
+        include,
+        None,
+    )
+
+    print(results)
+
+    expected = '''# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/modules/test
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # 2 - A
+#   2: 
+#   # 1 - A
+#   # 1: "hello"
+#   # 0 - A
+#   # 0: 
+# ```
+#
+
+include {
+    path = find_in_parent_folders()
+}
+
+locals {
+    source = "gitserver.com/test/test.git//modules/test?ref=0.1.0"
+    all = merge(
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
+    )
+}
+
+terraform {
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
 }
 
 inputs = merge({

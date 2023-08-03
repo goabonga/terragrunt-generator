@@ -1,4 +1,7 @@
 import json
+import os
+
+from generator.yaml import get_yaml
 
 
 def generate_header(
@@ -13,34 +16,21 @@ def generate_header(
         'nullables': {},
     },
 ) -> str:
-    text: str = ''
-    for var_type in ('mandatories', 'optionals', 'nullables'):
-        for variable in variables.get(var_type, []):
-            default = variable.get('default')
-            description = (
-                variable.get('description', '')
-                .replace('    ', '', 1)
-                .replace('\n', '\n#   #')
-                .replace('\\"', '"')
-            )
-            text += f"#   # {variable['name']} - {description}\n"
-            if var_type == 'nullables':
-                text += f"#   # {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
-            else:
-                text += f"#   {variable['name']}: {json.JSONEncoder().encode(default) if default else ''}\n"
-
     lookup = lookup.replace('local.all', '')
     path = path or ''
-    url = f"{url.replace('.git', '')}/tree/{version}/{path}"
-
+    if 'http' in url:
+        url = f"{url.replace('.git', '')}/tree/{version}/{path}"
+    yaml = (
+        get_yaml(lookup, variables)
+        .replace(f'{lookup}:', f'# {lookup}:')
+        .replace('\n  ', '\n#   ')
+    )
     return f"""# {name} {version}
 # {url}
 #
 # yaml config
 # ```
-# {lookup}:
-#   enabled: true
-{text}# ```
+{yaml}# ```
 #
 """
 
@@ -64,15 +54,9 @@ def generate_locals(
 ) -> str:
     return f"""
 locals {{
-    module = {{
-        repository = "{url.replace("https://", "").replace("http://", "")}"
-        path = {f'"//{path}"' if path != None else "null"}
-        version = "{version}"
-        source =  "${{local.module.repository}}${{local.module.path != null ? local.module.path : \'\'}}?ref=${{local.module.version}}"
-    }}
-    environment = get_env("CONFIG", "test")
+    source = "{url.replace("https://", "").replace("http://", "") if "http" in url else f'{{find_in_parent_folders("{url}")}}' }{f'//{path}' if path != None else ""}{f'?ref={version}' if "http" in url else ""}"
     all = merge(
-        yamldecode(file(find_in_parent_folders(format("config.%s.yaml", local.environment)))),
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
 }}
 """
@@ -81,7 +65,9 @@ locals {{
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
-    source = f'lookup(local.all.{lookup}, "enabled", true) == true ? local.module.source : null'
+    source = (
+        f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
+    )
     return f"""
 terraform {{
     source = {source}
@@ -188,15 +174,13 @@ def generate(
     name: str = None,
 ) -> str:
     variables, variables_object = parse_variables(hcl_files['variable'])
-    name = (
-        (
-            path.split('/')[-1:][0]
-            if path is not None
-            else url.split('/')[-1:][0].replace('.git', '')
-        )
-        if name is None
-        else name
-    )
+
+    if name is None:
+        if path is not None:
+            name = path.split('/')[-1:][0]
+        else:
+            name = os.path.dirname(url).split('/')[-1:][0].replace('.git', '')
+
     results: str
     results = generate_header(name, url, path, version, lookup, variables_object)
     results += generate_include(include)
