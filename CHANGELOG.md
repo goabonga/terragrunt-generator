@@ -1,3 +1,9 @@
+## 0.7.2 (2023-08-04)
+
+### Fix
+
+- issues allowing parsing error and fix source path for local modules
+
 ## 0.7.1 (2023-08-03)
 
 ### Fix
