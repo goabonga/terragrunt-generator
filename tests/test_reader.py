@@ -38,3 +38,14 @@ def test_read_directory(mock_file, mock_directory):
     mock_directory.assert_called_with(path)
     mock_file.assert_called_with(f'{path}/test.tf')
     assert results == {'variable': [{'test': {'default': '', 'type': 'string'}}]}
+
+
+@patch('os.listdir', return_value=['test.tf', 'test.tf'])
+@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch('hcl2.load', MagicMock(side_effect=Exception('mocked error')))
+def test_read_directory_except(mock_file, mock_directory):
+    path = 'path/to/open'
+    results = read_directory(path)
+    mock_directory.assert_called_with(path)
+    mock_file.assert_called_with(f'{path}/test.tf')
+    assert results == {}

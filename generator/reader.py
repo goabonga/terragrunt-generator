@@ -17,5 +17,8 @@ def read_directory(path: str) -> dict:
     datas = {}
     for file in os.listdir(path):
         if file.endswith('.tf'):
-            datas = datas | read_file(f'{path}/{file}')
+            try:
+                datas = datas | read_file(f'{path}/{file}')
+            except Exception:
+                pass
     return datas

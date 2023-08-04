@@ -54,7 +54,9 @@ def generate_locals(
 ) -> str:
     return f"""
 locals {{
-    source = "{url.replace("https://", "").replace("http://", "") if "http" in url else f'{{find_in_parent_folders("{url}")}}' }{f'//{path}' if path != None else ""}{f'?ref={version}' if "http" in url else ""}"
+    source = {
+        f'"{url.replace("https://", "").replace("http://", "")}{f"//{path}" if path != None else ""}?ref={version}"' if "http" in url else f'find_in_parent_folders("{url}")'
+    }
     all = merge(
         yamldecode(file(find_in_parent_folders("config.yaml"))),
     )

@@ -435,6 +435,91 @@ inputs = merge({
     hcl_files: list
     include: bool = True
 
+    url: str = 'test/test_path'
+    path: str = None
+    version: str = '0.1.0'
+    lookup: str = 'test'
+    name: str = 'test'
+
+    hcl_files = {
+        'variable': [
+            {
+                0: {
+                    'name': 'test',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': None,
+                },
+                1: {
+                    'name': 'test1',
+                    'description': 'A',
+                    'type': 'string',
+                    'default': 'hello',
+                },
+                2: {
+                    'name': 'test2',
+                    'description': 'A',
+                    'type': 'string',
+                },
+            }
+        ]
+    }
+
+    results = generate(
+        url,
+        path,
+        version,
+        lookup,
+        hcl_files,
+        include,
+        name,
+    )
+
+    expected = '''# test 0.1.0
+# test/test_path
+#
+# yaml config
+# ```
+# test:
+#   enabled: true
+#   # 2 - A
+#   2: 
+#   # 1 - A
+#   # 1: "hello"
+#   # 0 - A
+#   # 0: 
+# ```
+#
+
+include {
+    path = find_in_parent_folders()
+}
+
+locals {
+    source = find_in_parent_folders("test/test_path")
+    all = merge(
+        yamldecode(file(find_in_parent_folders("config.yaml"))),
+    )
+}
+
+terraform {
+    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
+}
+
+inputs = merge({
+    # 2 - A - required
+    2 = lookup(local.all.test, "2", "")
+    # 1 - A
+    1 = lookup(local.all.test, "1", "hello")
+},
+  # 0 - A
+  (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
+)'''
+    assert results == expected
+
+    hcl_files: list
+    include: bool = True
+
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
     version: str = '0.1.0'

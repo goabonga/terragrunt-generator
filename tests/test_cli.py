@@ -58,7 +58,7 @@ include {
 }
 
 locals {
-    source = "{find_in_parent_folders("./examples/modules/")}"
+    source = find_in_parent_folders("./examples/modules/")
     all = merge(
         yamldecode(file(find_in_parent_folders("config.yaml"))),
     )
