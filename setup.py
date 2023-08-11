@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'python-hcl2==3.0.5',
-        'GitPython==3.1.30',
+        'GitPython==3.1.32',
     ],
     extras_require={
         'dev': [
