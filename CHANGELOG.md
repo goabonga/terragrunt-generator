@@ -1,3 +1,9 @@
+## 0.7.3 (2023-09-19)
+
+### Fix
+
+- **sec**:  Known security vulnerabilities detected CVE-2023-40590
+
 ## 0.7.2 (2023-08-04)
 
 ### Fix
