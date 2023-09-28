@@ -1,3 +1,3 @@
-version = '0.7.3'
+version = '0.7.4'
 __name__ = 'terragrunt-generator'
 __version__ = version
