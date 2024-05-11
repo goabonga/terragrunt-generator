@@ -1,18 +1,36 @@
+PY = python3
+VENV = .venv
+BIN=$(VENV)/bin
 
+all: lint test
 
-dev: init
-	./.venv/bin/pre-commit install
-	./.venv/bin/pre-commit run
+$(VENV): setup.py
+	$(PY) -m venv $(VENV)
+	$(BIN)/pip install -e .[dev]
+	touch $(VENV)
 
-init:
-	python -m venv .venv
-	./.venv/bin/python -m pip install --upgrade pip
-	./.venv/bin/python -m pip install -e ./\[dev\]
+.PHONY:
+test: $(VENV)
+	$(BIN)/pytest --cov-config=.coveragerc --cov --cov-report=json --cov-report=term --cov-report=html -vv
 
-test:
-	./.venv/bin/python -m pytest --cov-config=.coveragerc --cov --cov-report=json --cov-report=term --cov-report=html -vv
+.PHONY: lint
+lint: $(VENV)
+	$(BIN)/isort ./generator ./tests
+	$(BIN)/black ./generator ./tests
+	$(BIN)/flake8 ./generator ./tests
 
-lint:
-	./.venv/bin/isort ./generator ./tests
-	./.venv/bin/black ./generator ./tests
-	./.venv/bin/flake8 ./generator ./tests
+.PHONY: release
+release: $(VENV)
+	$(BIN)/python setup.py sdist bdist_wheel upload
+
+clean:
+	rm -fr $(VENV)/
+	rm -fr build/
+	rm -fr dist/
+	rm -fr .eggs/
+	find . -name '*.egg-info' -exec rm -fr {} +
+	find . -name '*.egg' -exec rm -f {} +
+	find . -name '*.pyc' -exec rm -f {} +
+	find . -name '*.pyo' -exec rm -f {} +
+	find . -name '*~' -exec rm -f {} +
+	find . -name '__pycache__' -exec rm -fr {} +
