@@ -1,3 +1,9 @@
+## 0.7.6 (2024-05-11)
+
+### Fix
+
+- using copytree from shutil
+
 ## 0.7.5 (2024-01-20)
 
 ### Fix
