@@ -1,5 +1,5 @@
 import argparse
-from distutils.dir_util import copy_tree
+from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
 
@@ -43,7 +43,7 @@ def create_working_directory() -> str:
 
 def copy_terraform_module(url: str, version: str, path: str):
     if is_local(url):
-        copy_tree(url, path)
+        copytree(url, path)
     else:
         clone(url, path, version)
 
