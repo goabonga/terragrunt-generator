@@ -136,6 +136,38 @@ def test_generate_header_submodule():
     assert excepted == results
 
 
+def test_generate_header_nested_lookup():
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = 'modules/test'
+    version: str = '0.1.0'
+    lookup: str = 'test.module'
+    name: str = 'test'
+    variables = {
+        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
+        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
+        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+    }
+    results = generate_header(name, url, path, version, lookup, variables)
+    excepted = """# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/modules/test
+#
+# yaml config
+# ```
+# test:
+#   module:
+#     enabled: true
+#     # mandatories - mandatories
+#     mandatories: 
+#     # optionals - optionals
+#     # optionals: 
+#     # nullables - nullables
+#     # nullables: 
+# ```
+#
+"""
+    assert excepted == results
+
+
 def test_generate_include_with_path():
     results = generate_include()
     print(results)
@@ -430,6 +462,7 @@ inputs = merge({
   # 0 - A
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
 )'''
+    print(results)
     assert results == expected
 
     hcl_files: list

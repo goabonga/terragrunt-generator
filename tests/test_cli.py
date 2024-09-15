@@ -137,9 +137,14 @@ inputs = {
 @patch('generator.git.Repo.clone_from')
 @patch('os.listdir', return_value=['test.tf'])
 @patch('builtins.open', new_callable=mock_open, read_data=data)
-@patch('generator.main.copy_terraform_module', side_effect=Exception(b'Test exception message'))
+@patch(
+    'generator.main.copy_terraform_module',
+    side_effect=Exception(b'Test exception message'),
+)
 @patch('sys.exit')
-def test_main_repo_exception(mock_exit, mock_copy_module, mock_git, mock_dir, mock_file, capsys):
+def test_main_repo_exception(
+    mock_exit, mock_copy_module, mock_git, mock_dir, mock_file, capsys
+):
     args = [
         '-u',
         'https://gitserver.com/test/test.git',
