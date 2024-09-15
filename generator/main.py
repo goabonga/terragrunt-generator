@@ -34,7 +34,7 @@ parser.add_argument(
     default=True,
 )
 
-parser.add_argument('-l', '--lookup', help='define the lookup path')
+parser.add_argument('-l', '--lookup', help='define the lookup path', required=True)
 
 
 def create_working_directory() -> str:
