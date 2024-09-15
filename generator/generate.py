@@ -20,11 +20,20 @@ def generate_header(
     path = path or ''
     if 'http' in url:
         url = f"{url.replace('.git', '')}/tree/{version}/{path}"
+
+    # Check if lookup can be split and if it has at least one part after splitting
+    lookup_parts = lookup.split('.')
+    if len(lookup_parts) > 1:
+        lookup_prefix = lookup_parts[:-1][0]
+    else:
+        lookup_prefix = lookup  # Use lookup directly if it cannot be split
+
     yaml = (
         get_yaml(lookup, variables)
-        .replace(f'{lookup}:', f'# {lookup}:')
+        .replace(f'{lookup_prefix}:', f'# {lookup_prefix}:')
         .replace('\n  ', '\n#   ')
     )
+
     return f"""# {name} {version}
 # {url}
 #
