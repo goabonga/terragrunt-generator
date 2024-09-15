@@ -1,8 +1,8 @@
 import argparse
+import sys
 from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
-import sys
 
 from generator import __version__
 from generator.generate import generate
