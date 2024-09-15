@@ -2,6 +2,7 @@ import argparse
 from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
+import sys
 
 from generator import __version__
 from generator.generate import generate
@@ -52,8 +53,11 @@ def main(args=None):
     args: map = parser.parse_args(args)
 
     tempdir: str = create_working_directory()
-
-    copy_terraform_module(args.url, args.version, tempdir)
+    try:
+        copy_terraform_module(args.url, args.version, tempdir)
+    except BaseException as e:
+        print(e.args[-1:][0].decode())
+        sys.exit(1)
 
     hcl_files: dict = read_directory(
         f"{tempdir}/{'' if args.path is None else args.path}"

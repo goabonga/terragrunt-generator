@@ -132,3 +132,27 @@ inputs = {
 }
 """
     assert results == expected
+
+
+@patch('generator.git.Repo.clone_from')
+@patch('os.listdir', return_value=['test.tf'])
+@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch('generator.main.copy_terraform_module', side_effect=Exception(b'Test exception message'))
+@patch('sys.exit')
+def test_main_repo_exception(mock_exit, mock_copy_module, mock_git, mock_dir, mock_file, capsys):
+    args = [
+        '-u',
+        'https://gitserver.com/test/test.git',
+        '-v',
+        '0.0.1',
+        '-l',
+        'test',
+    ]
+
+    main(args)
+
+    results = capsys.readouterr().out
+
+    # Check that the exception message was printed and sys.exit was called
+    assert 'Test exception message' in results
+    mock_exit.assert_called_once_with(1)
