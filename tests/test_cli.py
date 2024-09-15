@@ -65,7 +65,7 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
+    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
 }
 
 inputs = merge({
@@ -123,7 +123,7 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all.test, "enabled", true) == true ? local.source : null
+    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
 }
 
 inputs = {

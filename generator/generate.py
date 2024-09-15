@@ -65,16 +65,26 @@ locals {{
 
 
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
+    lookups = lookup.split('.')
+    previous = "local.all"
+    source=""
+    for l in lookups:
+        source += f'lookup({previous}, "{l}", false) == false ? null : '
+        previous = f"{previous}.{l}"
+    source += f'lookup({previous}, "enabled", false) == false ? null : local.source'
+
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
-    source = (
-        f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
-    )
+    # source = (
+    #     f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
+    # )
     return f"""
 terraform {{
     source = {source}
 }}
 """
+
+#f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
 
 
 def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
