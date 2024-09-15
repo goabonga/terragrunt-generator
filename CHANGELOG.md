@@ -1,3 +1,16 @@
+## 0.8.0 (2024-09-15)
+
+### Feat
+
+- render nested yaml config based on lookup
+- catch exception on copy_terraform_module
+- make module optional into yaml config file
+
+### Fix
+
+- E741 ambiguous variable name 'l'
+- make lookup argument as required
+
 ## 0.7.6 (2024-05-11)
 
 ### Fix
