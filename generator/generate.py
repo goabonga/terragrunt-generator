@@ -67,7 +67,7 @@ locals {{
 def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
     lookups = lookup.split('.')
     previous = "local.all"
-    source=""
+    source = ""
     for l in lookups:
         source += f'lookup({previous}, "{l}", false) == false ? null : '
         previous = f"{previous}.{l}"
@@ -84,7 +84,8 @@ terraform {{
 }}
 """
 
-#f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
+
+# f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
 
 
 def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
