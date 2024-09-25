@@ -1,3 +1,9 @@
+## 0.9.0 (2024-09-25)
+
+### Feat
+
+- bump all packages to the latest version
+
 ## 0.8.0 (2024-09-15)
 
 ### Feat
