@@ -121,3 +121,25 @@ beta:
     assert "beta:" in result
     assert "gamma:" in result
     assert "value: 123" in result
+
+
+def test_merge_yaml_strings_with_same_content():
+    yaml1 = """test:
+  alpha:
+    beta:
+      value: 123"""
+    yaml2 = """test:
+  alpha:
+    gamma:
+      value: 123"""
+
+    result = merge_yaml_strings(yaml1, yaml2)
+
+    expected = """test:
+  alpha:
+    beta:
+      value: 123
+    gamma:
+      value: 123"""
+
+    assert result.strip() == expected.strip()
