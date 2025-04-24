@@ -77,7 +77,6 @@ def main(args=None):
     try:
         copy_terraform_module(args.url, args.version, tempdir)
     except BaseException as e:
-        # print(e.args[-1:][0].decode())
         print(str(e))
         sys.exit(1)
 
@@ -92,11 +91,6 @@ def main(args=None):
         lookup=args.lookup,
         hcl_files=hcl_files,
         include=args.include,
-        # config_filename=(
-        #     os.path.basename(args.yaml_output)
-        #     if args.yaml_output is not None
-        #     else "config.yaml"
-        # ),
         config_filename=(
             f"config.{args.yaml_for_env}.yaml"
             if args.yaml_for_env
@@ -129,34 +123,7 @@ def main(args=None):
 
         print(f"YAML config written to: {yaml_output_path}")
 
-    #    if args.yaml_output is not None:
-    #
-    #        # Merge si le fichier existe
-    #        if os.path.exists(args.yaml_output):
-    #            with open(args.yaml_output, 'r') as f:
-    #                existing_yaml = f.read()
-    #            final_yaml = merge_yaml_strings(existing_yaml, yanl)
-    #        else:
-    #            final_yaml = yanl
-    #
-    #        output_dir = os.path.dirname(args.yaml_output)
-    #        if output_dir:
-    #            os.makedirs(output_dir, exist_ok=True)
-    #
-    #        with open(args.yaml_output, 'w') as f:
-    #            f.write(final_yaml)
-    #
-    #        print(f"YAML config written to: {args.yaml_output}")
-
     if args.output is not None:
-        print(hcl_files)
-
-        # if args.output.endswith('/'):
-        #    output_path = os.path.join(args.output, 'terragrunt.hcl')
-        # elif os.path.isdir(args.output):
-        #    output_path = os.path.join(args.output, 'terragrunt.hcl')
-        # else:
-        #    output_path = args.output
 
         if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
             output_path = os.path.join(args.output, 'terragrunt.hcl')
@@ -173,4 +140,3 @@ def main(args=None):
         print(f"terragrunt.hcl written to: {output_path}")
     else:
         print(output)
-        # print(yanl)
