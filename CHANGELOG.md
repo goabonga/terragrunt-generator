@@ -1,3 +1,9 @@
+## 0.16.0 (2025-04-24)
+
+### Feat
+
+- **cli**: improve help messages and CLI argument descriptions
+
 ## 0.15.0 (2025-04-24)
 
 ### Feat
