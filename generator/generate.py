@@ -67,14 +67,23 @@ def generate_locals(
     path: str = None,
     version: str = None,
     config_filename: str = "config.yaml",
+    yaml_env: str = None,
 ) -> str:
+    config_line = (
+        'format("config.%s.yaml", local.environment)'
+        if yaml_env
+        else f'"{config_filename}"'
+    )
+
+    env_line = f'environment = get_env("ENV", "{yaml_env}")\n    ' if yaml_env else ''
+
     return f"""
 locals {{
-    source = {
+    {env_line}source = {
         f'"{url.replace("https://", "").replace("http://", "")}{f"//{path}" if path is not None else ""}?ref={version}"' if "http" in url else f'find_in_parent_folders("{url}")'
     }
     all = merge(
-        yamldecode(file(find_in_parent_folders("{config_filename}"))),
+        yamldecode(file(find_in_parent_folders({config_line}))),
     )
 }}
 """
@@ -202,6 +211,7 @@ def generate(
     include: bool = True,
     name: str = None,
     config_filename: str = "config.yaml",
+    yaml_env: str = None,
 ) -> tuple[str, str]:
     variables, variables_object = parse_variables(hcl_files['variable'])
 
@@ -217,7 +227,7 @@ def generate(
         header  # generate_header(name, url, path, version, lookup, variables_object)
     )
     results += generate_include(include)
-    results += generate_locals(url, path, version, config_filename)
+    results += generate_locals(url, path, version, config_filename, yaml_env)
     results += generate_terraform(url, path, version, lookup)
     results += generate_inputs(variables, lookup)
     return results, yaml
