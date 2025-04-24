@@ -51,6 +51,12 @@ parser.add_argument(
     default=None,
 )
 
+parser.add_argument(
+    '--yaml-for-env',
+    help='Environment name for YAML file like config.<env>.yaml',
+    default=None,
+)
+
 
 def create_working_directory() -> str:
     tempdir = f'{gettempdir()}/{uuid4()}'
@@ -86,31 +92,61 @@ def main(args=None):
         lookup=args.lookup,
         hcl_files=hcl_files,
         include=args.include,
+        # config_filename=(
+        #     os.path.basename(args.yaml_output)
+        #     if args.yaml_output is not None
+        #     else "config.yaml"
+        # ),
         config_filename=(
-            os.path.basename(args.yaml_output)
-            if args.yaml_output is not None
-            else "config.yaml"
+            f"config.{args.yaml_for_env}.yaml"
+            if args.yaml_for_env
+            else (
+                os.path.basename(args.yaml_output)
+                if args.yaml_output is not None
+                else "config.yaml"
+            )
         ),
+        yaml_env=args.yaml_for_env,
     )
 
     if args.yaml_output is not None:
+        config_filename = (
+            f"config.{args.yaml_for_env}.yaml" if args.yaml_for_env else "config.yaml"
+        )
+        yaml_output_path = os.path.join(args.yaml_output, config_filename)
 
-        # Merge si le fichier existe
-        if os.path.exists(args.yaml_output):
-            with open(args.yaml_output, 'r') as f:
+        if os.path.exists(yaml_output_path):
+            with open(yaml_output_path, 'r') as f:
                 existing_yaml = f.read()
             final_yaml = merge_yaml_strings(existing_yaml, yanl)
         else:
             final_yaml = yanl
 
-        output_dir = os.path.dirname(args.yaml_output)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(yaml_output_path), exist_ok=True)
 
-        with open(args.yaml_output, 'w') as f:
+        with open(yaml_output_path, 'w') as f:
             f.write(final_yaml)
 
-        print(f"YAML config written to: {args.yaml_output}")
+        print(f"YAML config written to: {yaml_output_path}")
+
+    #    if args.yaml_output is not None:
+    #
+    #        # Merge si le fichier existe
+    #        if os.path.exists(args.yaml_output):
+    #            with open(args.yaml_output, 'r') as f:
+    #                existing_yaml = f.read()
+    #            final_yaml = merge_yaml_strings(existing_yaml, yanl)
+    #        else:
+    #            final_yaml = yanl
+    #
+    #        output_dir = os.path.dirname(args.yaml_output)
+    #        if output_dir:
+    #            os.makedirs(output_dir, exist_ok=True)
+    #
+    #        with open(args.yaml_output, 'w') as f:
+    #            f.write(final_yaml)
+    #
+    #        print(f"YAML config written to: {args.yaml_output}")
 
     if args.output is not None:
         print(hcl_files)

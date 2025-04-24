@@ -301,7 +301,7 @@ def test_output_directory_without_slash(
 @patch(
     'builtins.open',
     new_callable=mock_open,
-    read_data="gke:\n  cluster:\n    enabled: true\n",
+    read_data="gke:\n  helper:\n    enabled: true\n",
 )
 def test_yaml_output_merge_if_exists(
     mock_open_read,
@@ -312,9 +312,10 @@ def test_yaml_output_merge_if_exists(
     tmp_path,
     capsys,
 ):
-    yaml_output_file = tmp_path / "config.yaml"
+    yaml_output_dir = tmp_path
+    yaml_filename = "config.test.yaml"
+    yaml_output_file = yaml_output_dir / yaml_filename
 
-    # Ajoute une variable optionnelle pour éviter IndexError dans content_next
     mock_read_dir.return_value = {
         'variable': [
             {
@@ -338,9 +339,11 @@ def test_yaml_output_merge_if_exists(
             '-v',
             '0.0.1',
             '-l',
-            'gke',
+            'gke.helper',
+            '--yaml-for-env',
+            'test',
             '--yaml-output',
-            str(yaml_output_file),
+            str(yaml_output_dir),
         ]
         main(args)
 
@@ -356,7 +359,7 @@ def test_yaml_output_merge_if_exists(
 @patch('generator.main.copy_terraform_module')
 @patch('generator.main.read_directory')
 @patch('os.makedirs')
-@patch('os.path.exists', return_value=False)  # 👈 le fichier n'existe PAS
+@patch('os.path.exists', return_value=False)
 @patch('builtins.open', new_callable=mock_open)
 def test_yaml_output_new_file_creation(
     mock_open_write,
@@ -367,9 +370,10 @@ def test_yaml_output_new_file_creation(
     tmp_path,
     capsys,
 ):
-    yaml_output_file = tmp_path / "config.yaml"
+    yaml_output_dir = tmp_path
+    yaml_filename = "config.dev.yaml"
+    yaml_output_file = yaml_output_dir / yaml_filename
 
-    # Une seule variable suffit ici
     mock_read_dir.return_value = {
         'variable': [
             {
@@ -390,8 +394,10 @@ def test_yaml_output_new_file_creation(
             '0.0.1',
             '-l',
             'gke',
+            '--yaml-for-env',
+            'dev',
             '--yaml-output',
-            str(yaml_output_file),
+            str(yaml_output_dir),
         ]
         main(args)
 
