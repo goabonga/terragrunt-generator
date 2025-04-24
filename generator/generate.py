@@ -15,6 +15,7 @@ def generate_header(
         'optionals': {},
         'nullables': {},
     },
+    enabled: bool = True,
 ) -> tuple[str, str]:
     lookup = lookup.replace('local.all', '')
     path = path or ''
@@ -27,7 +28,7 @@ def generate_header(
     else:
         lookup_prefix = lookup
 
-    yaml_raw = get_yaml(lookup, variables)
+    yaml_raw = get_yaml(lookup, variables, enabled)
     yaml_comment = yaml_raw.replace(f'{lookup_prefix}:', f'# {lookup_prefix}:').replace(
         '\n  ', '\n#   '
     )
@@ -200,6 +201,7 @@ def generate(
     name: str = None,
     config_filename: str = "config.yaml",
     yaml_env: str = None,
+    enabled: bool = True,
 ) -> tuple[str, str]:
     variables, variables_object = parse_variables(hcl_files['variable'])
 
@@ -209,7 +211,9 @@ def generate(
         else:
             name = os.path.dirname(url).split('/')[-1:][0].replace('.git', '')
 
-    header, yaml = generate_header(name, url, path, version, lookup, variables_object)
+    header, yaml = generate_header(
+        name, url, path, version, lookup, variables_object, enabled
+    )
     results: str
     results = header
     results += generate_include(include)

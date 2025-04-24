@@ -57,6 +57,13 @@ parser.add_argument(
     default=None,
 )
 
+parser.add_argument(
+    '--enabled',
+    help='enabled module in configuration',
+    action=argparse.BooleanOptionalAction,
+    default=True,
+)
+
 
 def create_working_directory() -> str:
     tempdir = f'{gettempdir()}/{uuid4()}'
@@ -101,6 +108,7 @@ def main(args=None):
             )
         ),
         yaml_env=args.yaml_for_env,
+        enabled=args.enabled,
     )
 
     if args.yaml_output is not None:
