@@ -1,7 +1,7 @@
 import json
 
 
-def get_yaml(name: str, variables) -> str:
+def get_yaml(name: str, variables, is_enabled: bool = True) -> str:
     name_parts = name.split('.')
 
     indent = '  ' * len(name_parts)
@@ -31,7 +31,7 @@ def get_yaml(name: str, variables) -> str:
         nested_yaml += f"{current_indent}{part}:\n"
         current_indent += '  '
 
-    return f"""{nested_yaml}{current_indent}enabled: true
+    return f"""{nested_yaml}{current_indent}enabled: {"true" if is_enabled else "false"}
 {text}"""
 
 
