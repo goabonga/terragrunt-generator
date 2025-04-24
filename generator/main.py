@@ -5,7 +5,7 @@ from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
 
-from generator import __version__
+from generator import __name__, __version__
 from generator.generate import generate
 from generator.git import clone
 from generator.reader import read_directory
@@ -13,8 +13,8 @@ from generator.utils import is_local
 from generator.yaml import merge_yaml_strings
 
 parser = argparse.ArgumentParser(
-    prog='terragrunt-gernerator',
-    description='generate terragrunt.hcl confirugation' + ' from terraform module',
+    prog=__name__,
+    description='Generate a terragrunt.hcl configuration file from a Terraform module.',
 )
 
 parser.add_argument(
@@ -23,43 +23,62 @@ parser.add_argument(
     version=f'%(prog)s {__version__}',
 )
 
-parser.add_argument('-u', '--url', required=True, help='the module repository url')
+parser.add_argument(
+    '-u',
+    '--url',
+    required=True,
+    help='URL or local path to the Terraform module (can be a git repo or directory).',
+)
 
-parser.add_argument('-v', '--version', help='the module version to use', default='main')
+parser.add_argument(
+    '-v',
+    '--version',
+    help='Branch, tag, or commit hash to checkout if the module is from a git repository (default: main).',
+    default='main',
+)
 
-parser.add_argument('-p', '--path', help='define the module path if needed')
+parser.add_argument(
+    '-p',
+    '--path',
+    help='Relative path to the module inside the repository or directory (if needed).',
+)
 
 parser.add_argument(
     '--include',
-    help='do no rendering the include block',
+    help='Whether to include the "include" block in the generated terragrunt.hcl (default: true).',
     action=argparse.BooleanOptionalAction,
     default=True,
 )
 
-parser.add_argument('-l', '--lookup', help='define the lookup path', required=True)
+parser.add_argument(
+    '-l',
+    '--lookup',
+    required=True,
+    help='Path used for variable lookup in the generated Terragrunt configuration.',
+)
 
 parser.add_argument(
     '-o',
     '--output',
-    help='Path to write the generated terragrunt.hcl file (default: print to stdout)',
+    help='File path to write the generated terragrunt.hcl (default: print to stdout).',
     default=None,
 )
 
 parser.add_argument(
     '--yaml-output',
-    help='Path to write the generated YAML file (merged if already exists)',
+    help='Directory to write the generated YAML config file (it will be merged if it already exists).',
     default=None,
 )
 
 parser.add_argument(
     '--yaml-for-env',
-    help='Environment name for YAML file like config.<env>.yaml',
+    help='Environment name used to generate the YAML file (e.g., config.dev.yaml).',
     default=None,
 )
 
 parser.add_argument(
     '--enabled',
-    help='enabled module in configuration',
+    help='Whether to mark the module as enabled in the YAML configuration (default: true).',
     action=argparse.BooleanOptionalAction,
     default=True,
 )

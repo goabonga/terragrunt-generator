@@ -20,7 +20,7 @@ def test_help(capsys, option):
     except SystemExit:
         pass
     output = capsys.readouterr().out
-    assert 'generate terragrunt.hcl confirugation from terraform module' in output
+    assert 'Generate a terragrunt.hcl configuration file from a Terraform module.' in output
 
 
 def test_main_local(capsys):

@@ -29,21 +29,42 @@ You'll see something like this:
 
 ```plaintext
 usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
-                            [--include | --no-include] -l LOOKUP
+                            [--include | --no-include] -l LOOKUP [-o OUTPUT]
+                            [--yaml-output YAML_OUTPUT]
+                            [--yaml-for-env YAML_FOR_ENV]
+                            [--enabled | --no-enabled]
 
-Generate terragrunt.hcl configuration from a Terraform module.
+Generate a terragrunt.hcl configuration file from a Terraform module.
 
-Options:
-  -h, --help            Show this help message and exit
-  -V                    Show program's version number and exit
-  -u URL, --url URL     The module repository URL
+options:
+  -h, --help            show this help message and exit
+  -V                    show program's version number and exit
+  -u URL, --url URL     URL or local path to the Terraform module (can be a
+                        git repo or directory).
   -v VERSION, --version VERSION
-                        The module version to use
-  -p PATH, --path PATH  Define the module path if needed
+                        Branch, tag, or commit hash to checkout if the module
+                        is from a git repository (default: main).
+  -p PATH, --path PATH  Relative path to the module inside the repository or
+                        directory (if needed).
   --include, --no-include
-                        Include or exclude the rendering of the include block (default: True)
+                        Whether to include the "include" block in the
+                        generated terragrunt.hcl (default: true).
   -l LOOKUP, --lookup LOOKUP
-                        Define the lookup path
+                        Path used for variable lookup in the generated
+                        Terragrunt configuration.
+  -o OUTPUT, --output OUTPUT
+                        File path to write the generated terragrunt.hcl
+                        (default: print to stdout).
+  --yaml-output YAML_OUTPUT
+                        Directory to write the generated YAML config file (it
+                        will be merged if it already exists).
+  --yaml-for-env YAML_FOR_ENV
+                        Environment name used to generate the YAML file (e.g.,
+                        config.dev.yaml).
+  --enabled, --no-enabled
+                        Whether to mark the module as enabled in the YAML
+                        configuration (default: true).
+
 ```
 
 ### 📚 Example Usage
