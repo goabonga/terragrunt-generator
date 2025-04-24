@@ -1,3 +1,9 @@
+## 0.11.0 (2025-04-24)
+
+### Feat
+
+- **generate**: return both HCL and YAML as tuple in generate and generate_header
+
 ## 0.10.0 (2025-04-24)
 
 ### Feat
