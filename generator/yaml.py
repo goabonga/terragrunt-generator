@@ -35,69 +35,81 @@ def get_yaml(name: str, variables, is_enabled: bool = True) -> str:
 {text}"""
 
 
-def extract_header(lines):
-    header = []
-    i = 0
-    while i < len(lines) and (lines[i].strip().startswith("#") or not lines[i].strip()):
+def extract_header(lines: list[str]) -> tuple[list[str], list[str]]:
+    header, i = [], 0
+    while i < len(lines) and (lines[i].strip().startswith('#') or not lines[i].strip()):
         header.append(lines[i])
         i += 1
     return header, lines[i:]
 
 
-def extract_top_level_blocks(lines):
-    blocks = {}
-    current_key = None
-    current_block = []
+def is_block_start(line: str, indent: int) -> bool:
+    stripped = line.lstrip()
+    return (
+        len(line) - len(stripped) == indent
+        and stripped.endswith(':')
+        and not stripped.startswith('#')
+    )
 
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            if current_block is not None:
-                current_block.append(line)
+
+def split_blocks(
+    lines: list[str], indent: int
+) -> tuple[dict[str, list[str]], list[str]]:
+    blocks, order, i = {}, [], 0
+    while i < len(lines):
+        if is_block_start(lines[i], indent):
+            key = lines[i].strip()
+            start = i
+            i += 1
+            while i < len(lines) and not is_block_start(lines[i], indent):
+                i += 1
+            blocks[key] = lines[start:i]
+            order.append(key)
+        else:
+            i += 1
+    return blocks, order
+
+
+def merge_block_lines(a: list[str], b: list[str], indent: int) -> list[str]:
+    blocks_a, order_a = split_blocks(a, indent)
+    blocks_b, order_b = split_blocks(b, indent)
+
+    merged, done = [], set()
+    i = 0
+    while i < len(a):
+        line = a[i]
+        if is_block_start(line, indent):
+            key = line.strip()
+            block_a = blocks_a[key]
+            if key in blocks_b:
+                block_b = blocks_b[key]
+                merged_sub = merge_block_lines(block_a[1:], block_b[1:], indent + 2)
+                merged.extend([block_a[0], *merged_sub])
+                done.add(key)
+            else:
+                merged.extend(block_a)
+            i += len(block_a)
+        else:
+            merged.append(line)
+            i += 1
+
+    for key in order_b:
+        if key not in done and key not in blocks_a:
+            merged.extend(blocks_b[key])
+
+    for line in b:
+        if is_block_start(line, indent):
             continue
+        if line not in merged:
+            merged.append(line)
 
-        indent = len(line) - len(stripped)
-        if indent == 0 and stripped.endswith(":") and not stripped.startswith("#"):
-            if current_key and current_block:
-                blocks[current_key] = current_block
-            current_key = stripped
-            current_block = [line]
-        else:
-            if current_block is not None:
-                current_block.append(line)
-
-    if current_key and current_block:
-        blocks[current_key] = current_block
-
-    return blocks
-
-
-def merge_top_blocks(blocks1, blocks2):
-    merged = dict(blocks1)
-    for key, block in blocks2.items():
-        if key in merged:
-            merged_block = merged[key]
-            merged_block.extend([line for line in block if line not in merged_block])
-            merged[key] = merged_block
-        else:
-            merged[key] = block
     return merged
 
 
 def merge_yaml_strings(yaml1: str, yaml2: str) -> str:
-    lines1 = yaml1.strip().splitlines()
-    lines2 = yaml2.strip().splitlines()
-
+    lines1, lines2 = yaml1.strip().splitlines(), yaml2.strip().splitlines()
     header1, body1 = extract_header(lines1)
     _, body2 = extract_header(lines2)
 
-    blocks1 = extract_top_level_blocks(body1)
-    blocks2 = extract_top_level_blocks(body2)
-
-    merged_blocks = merge_top_blocks(blocks1, blocks2)
-
-    result = header1 + ['']
-    for block in merged_blocks.values():
-        result.extend(block)
-
-    return "\n".join(result)
+    merged_body = merge_block_lines(body1, body2, indent=0)
+    return "\n".join(header1 + [""] + merged_body)
