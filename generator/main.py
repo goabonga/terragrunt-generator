@@ -80,12 +80,17 @@ def main(args=None):
     )
 
     output, yanl = generate(
-        args.url,
-        None if args.path is None else args.path,
-        args.version,
-        args.lookup,
-        hcl_files,
-        args.include,
+        url=args.url,
+        path=None if args.path is None else args.path,
+        version=args.version,
+        lookup=args.lookup,
+        hcl_files=hcl_files,
+        include=args.include,
+        config_filename=(
+            os.path.basename(args.yaml_output)
+            if args.yaml_output is not None
+            else "config.yaml"
+        ),
     )
 
     if args.yaml_output is not None:
