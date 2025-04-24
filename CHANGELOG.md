@@ -1,3 +1,9 @@
+## 0.12.0 (2025-04-24)
+
+### Feat
+
+- **yaml**: add support for merging and writing YAML output to file
+
 ## 0.11.0 (2025-04-24)
 
 ### Feat
