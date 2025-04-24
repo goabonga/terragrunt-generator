@@ -1,3 +1,9 @@
+## 0.10.0 (2025-04-24)
+
+### Feat
+
+- **cli**: support output path with directory or filename
+
 ## 0.9.1 (2025-04-24)
 
 ### Fix
