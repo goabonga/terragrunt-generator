@@ -1,3 +1,4 @@
+import os
 from unittest.mock import mock_open, patch
 
 import pytest
@@ -161,3 +162,133 @@ def test_main_repo_exception(
     # Check that the exception message was printed and sys.exit was called
     assert 'Test exception message' in results
     mock_exit.assert_called_once_with(1)
+
+
+@patch('generator.main.copy_terraform_module')  # empêche la vraie copie
+@patch('generator.main.read_directory')  # 👈 patch correct ici
+@patch('os.makedirs')
+@patch('builtins.open', new_callable=mock_open)
+def test_main_local_with_output(
+    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+):
+    fake_tempdir = tmp_path / "mocked_temp"
+    os.makedirs(fake_tempdir.as_posix(), exist_ok=True)
+
+    # Retour simulé du fichier terraform
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'required': {
+                    'description': 'required value',
+                    'type': 'string',
+                },
+                'optional': {
+                    'description': 'optional value',
+                    'type': 'string',
+                    'default': 'optional',
+                },
+                'nullable': {
+                    'description': 'nullable value',
+                    'type': 'string',
+                    'default': None,
+                },
+            }
+        ]
+    }
+
+    with patch(
+        'generator.main.create_working_directory', return_value=fake_tempdir.as_posix()
+    ):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'test',
+            '-o',
+            './output/',
+        ]
+        main(args)
+
+    results = capsys.readouterr().out
+    assert 'terragrunt.hcl written to: ./output/terragrunt.hcl' in results
+    # mock_makedirs.assert_called_once_with('./output', exist_ok=True)
+    mock_open_write.assert_any_call('./output/terragrunt.hcl', 'w')
+    handle = mock_open_write()
+    handle.write.assert_called()
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('builtins.open', new_callable=mock_open)
+def test_output_explicit_file_path(
+    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+):
+    output_file = tmp_path / "terragrunt-custom.hcl"
+
+    mock_read_dir.return_value = {
+        'variable': [
+            {'test': {'description': '', 'type': 'string', 'default': 'value'}}
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'test',
+            '-o',
+            str(output_file),
+        ]
+        main(args)
+
+    mock_open_write.assert_any_call(str(output_file), 'w')
+    handle = mock_open_write()
+    handle.write.assert_called()
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('os.path.isdir', return_value=True)  # 👈 important ici
+@patch('builtins.open', new_callable=mock_open)
+def test_output_directory_without_slash(
+    mock_open_write,
+    mock_isdir,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    output_dir = tmp_path / "dir"
+    os.makedirs(output_dir)
+
+    mock_read_dir.return_value = {
+        'variable': [
+            {'test': {'description': '', 'type': 'string', 'default': 'value'}}
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'test',
+            '-o',
+            str(output_dir),  # sans slash
+        ]
+        main(args)
+
+    expected_path = os.path.join(str(output_dir), 'terragrunt.hcl')
+    mock_open_write.assert_any_call(expected_path, 'w')
+    handle = mock_open_write()
+    handle.write.assert_called()
