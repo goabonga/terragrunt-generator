@@ -1,3 +1,9 @@
+## 0.9.1 (2025-04-24)
+
+### Fix
+
+- **generator**: use  for PEP8 compliance
+
 ## 0.9.0 (2024-09-25)
 
 ### Feat
