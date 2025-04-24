@@ -20,7 +20,7 @@ def test_generate_header():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
 
     print(results)
 
@@ -42,6 +42,7 @@ def test_generate_header():
 """
     assert results == expected
 
+
 def test_generate_header_with_deep_lookup():
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'modules/test'
@@ -53,7 +54,7 @@ def test_generate_header_with_deep_lookup():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
 
     print(results)
 
@@ -88,7 +89,7 @@ def test_generate_header_local_module():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # ./test/test/
 #
@@ -119,7 +120,7 @@ def test_generate_header_module():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/
 #
@@ -150,7 +151,7 @@ def test_generate_header_submodule():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
@@ -181,7 +182,7 @@ def test_generate_header_nested_lookup():
         'optionals': [{'name': 'optionals', 'description': 'optionals'}],
         'nullables': [{'name': 'nullables', 'description': 'nullables'}],
     }
-    results = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
@@ -446,7 +447,7 @@ def test_generate():
         ]
     }
 
-    results = generate(
+    results, yaml = generate(
         url,
         path,
         version,
@@ -532,7 +533,7 @@ inputs = merge({
         ]
     }
 
-    results = generate(
+    results, yaml = generate(
         url,
         path,
         version,
@@ -617,7 +618,7 @@ inputs = merge({
         ]
     }
 
-    results = generate(
+    results, yaml = generate(
         url,
         path,
         version,
@@ -704,7 +705,7 @@ inputs = merge({
         ]
     }
 
-    results = generate(
+    results, yaml = generate(
         url,
         path,
         version,

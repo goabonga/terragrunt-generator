@@ -15,7 +15,7 @@ def generate_header(
         'optionals': {},
         'nullables': {},
     },
-) -> str:
+) -> tuple[str, str]:
     lookup = lookup.replace('local.all', '')
     path = path or ''
     if 'http' in url:
@@ -28,20 +28,26 @@ def generate_header(
     else:
         lookup_prefix = lookup  # Use lookup directly if it cannot be split
 
-    yaml = (
-        get_yaml(lookup, variables)
-        .replace(f'{lookup_prefix}:', f'# {lookup_prefix}:')
-        .replace('\n  ', '\n#   ')
+    # yaml = (
+    #    get_yaml(lookup, variables)
+    #    .replace(f'{lookup_prefix}:', f'# {lookup_prefix}:')
+    #    .replace('\n  ', '\n#   ')
+    # )
+
+    yaml_raw = get_yaml(lookup, variables)
+    yaml_comment = yaml_raw.replace(f'{lookup_prefix}:', f'# {lookup_prefix}:').replace(
+        '\n  ', '\n#   '
     )
 
-    return f"""# {name} {version}
+    header = f"""# {name} {version}
 # {url}
 #
 # yaml config
 # ```
-{yaml}# ```
+{yaml_comment}# ```
 #
 """
+    return header, yaml_raw
 
 
 def generate_include(enable: bool = True) -> str:
@@ -194,7 +200,7 @@ def generate(
     hcl_files: list,
     include: bool = True,
     name: str = None,
-) -> str:
+) -> tuple[str, str]:
     variables, variables_object = parse_variables(hcl_files['variable'])
 
     if name is None:
@@ -203,10 +209,13 @@ def generate(
         else:
             name = os.path.dirname(url).split('/')[-1:][0].replace('.git', '')
 
+    header, yaml = generate_header(name, url, path, version, lookup, variables_object)
     results: str
-    results = generate_header(name, url, path, version, lookup, variables_object)
+    results = (
+        header  # generate_header(name, url, path, version, lookup, variables_object)
+    )
     results += generate_include(include)
     results += generate_locals(url, path, version)
     results += generate_terraform(url, path, version, lookup)
     results += generate_inputs(variables, lookup)
-    return results
+    return results, yaml

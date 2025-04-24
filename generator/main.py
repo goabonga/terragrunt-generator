@@ -72,7 +72,7 @@ def main(args=None):
         f"{tempdir}/{'' if args.path is None else args.path}"
     )
 
-    output: str = generate(
+    output, yanl = generate(
         args.url,
         None if args.path is None else args.path,
         args.version,
@@ -101,3 +101,4 @@ def main(args=None):
         print(f"terragrunt.hcl written to: {output_path}")
     else:
         print(output)
+        # print(yanl)
