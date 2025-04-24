@@ -1,3 +1,9 @@
+## 0.16.1 (2025-04-24)
+
+### Fix
+
+- **yaml**: improve YAML merge logic with recursive block merging and header preservation
+
 ## 0.16.0 (2025-04-24)
 
 ### Feat

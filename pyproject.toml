@@ -23,7 +23,7 @@ exclude = '''  # Specify the files/dirs that should be ignored by the black form
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.16.0"
+version = "0.16.1"
 tag_format = "$major.$minor.$patch$prerelease"
 version_files = [
     "pyproject.toml:version",
