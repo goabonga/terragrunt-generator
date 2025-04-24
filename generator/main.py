@@ -151,9 +151,14 @@ def main(args=None):
     if args.output is not None:
         print(hcl_files)
 
-        if args.output.endswith('/'):
-            output_path = os.path.join(args.output, 'terragrunt.hcl')
-        elif os.path.isdir(args.output):
+        # if args.output.endswith('/'):
+        #    output_path = os.path.join(args.output, 'terragrunt.hcl')
+        # elif os.path.isdir(args.output):
+        #    output_path = os.path.join(args.output, 'terragrunt.hcl')
+        # else:
+        #    output_path = args.output
+
+        if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
             output_path = os.path.join(args.output, 'terragrunt.hcl')
         else:
             output_path = args.output
