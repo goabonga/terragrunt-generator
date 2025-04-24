@@ -1,3 +1,9 @@
+## 0.14.1 (2025-04-24)
+
+### Fix
+
+- improve merge_yaml_strings logic and output path resolution
+
 ## 0.14.0 (2025-04-24)
 
 ### Feat
