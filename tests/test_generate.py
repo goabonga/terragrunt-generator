@@ -42,6 +42,40 @@ def test_generate_header():
 """
     assert results == expected
 
+def test_generate_header_with_deep_lookup():
+    url: str = 'https://gitserver.com/test/test.git'
+    path: str = 'modules/test'
+    version: str = '0.1.0'
+    lookup: str = 'app.test'
+    name: str = 'test'
+    variables = {
+        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
+        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
+        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+    }
+    results = generate_header(name, url, path, version, lookup, variables)
+
+    print(results)
+
+    expected = """# test 0.1.0
+# https://gitserver.com/test/test/tree/0.1.0/modules/test
+#
+# yaml config
+# ```
+# app:
+#   test:
+#     enabled: true
+#     # mandatories - mandatories
+#     mandatories: 
+#     # optionals - optionals
+#     # optionals: 
+#     # nullables - nullables
+#     # nullables: 
+# ```
+#
+"""
+    assert results == expected
+
 
 def test_generate_header_local_module():
     url: str = './test/test/'
