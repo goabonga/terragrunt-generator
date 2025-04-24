@@ -10,6 +10,7 @@ from generator.generate import generate
 from generator.git import clone
 from generator.reader import read_directory
 from generator.utils import is_local
+from generator.yaml import merge_yaml_strings
 
 parser = argparse.ArgumentParser(
     prog='terragrunt-gernerator',
@@ -41,6 +42,12 @@ parser.add_argument(
     '-o',
     '--output',
     help='Path to write the generated terragrunt.hcl file (default: print to stdout)',
+    default=None,
+)
+
+parser.add_argument(
+    '--yaml-output',
+    help='Path to write the generated YAML file (merged if already exists)',
     default=None,
 )
 
@@ -80,6 +87,25 @@ def main(args=None):
         hcl_files,
         args.include,
     )
+
+    if args.yaml_output is not None:
+
+        # Merge si le fichier existe
+        if os.path.exists(args.yaml_output):
+            with open(args.yaml_output, 'r') as f:
+                existing_yaml = f.read()
+            final_yaml = merge_yaml_strings(existing_yaml, yanl)
+        else:
+            final_yaml = yanl
+
+        output_dir = os.path.dirname(args.yaml_output)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        with open(args.yaml_output, 'w') as f:
+            f.write(final_yaml)
+
+        print(f"YAML config written to: {args.yaml_output}")
 
     if args.output is not None:
         print(hcl_files)
