@@ -1,5 +1,5 @@
 [flake8]
-ignore = E501
+ignore = E501, E203, W503
 max-complexity = 10
 max-line-length = 89
 statistics = true

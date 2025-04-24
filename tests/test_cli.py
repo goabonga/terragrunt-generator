@@ -292,3 +292,112 @@ def test_output_directory_without_slash(
     mock_open_write.assert_any_call(expected_path, 'w')
     handle = mock_open_write()
     handle.write.assert_called()
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('os.path.exists', return_value=True)
+@patch(
+    'builtins.open',
+    new_callable=mock_open,
+    read_data="gke:\n  cluster:\n    enabled: true\n",
+)
+def test_yaml_output_merge_if_exists(
+    mock_open_read,
+    mock_exists,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    yaml_output_file = tmp_path / "config.yaml"
+
+    # Ajoute une variable optionnelle pour éviter IndexError dans content_next
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'helper': {
+                    'description': 'helper description',
+                    'type': 'string',
+                    'default': 'default_value',
+                },
+                'mandatory_var': {
+                    'description': 'mandatory description',
+                    'type': 'string',
+                },
+            }
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'gke',
+            '--yaml-output',
+            str(yaml_output_file),
+        ]
+        main(args)
+
+    results = capsys.readouterr().out
+    assert f"YAML config written to: {yaml_output_file}" in results
+
+    mock_open_read.assert_any_call(str(yaml_output_file), 'r')
+    mock_open_read.assert_any_call(str(yaml_output_file), 'w')
+    handle = mock_open_read()
+    handle.write.assert_called()
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('os.path.exists', return_value=False)  # 👈 le fichier n'existe PAS
+@patch('builtins.open', new_callable=mock_open)
+def test_yaml_output_new_file_creation(
+    mock_open_write,
+    mock_exists,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    yaml_output_file = tmp_path / "config.yaml"
+
+    # Une seule variable suffit ici
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'test': {
+                    'description': 'desc',
+                    'type': 'string',
+                    'default': 'default_val',
+                }
+            }
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'gke',
+            '--yaml-output',
+            str(yaml_output_file),
+        ]
+        main(args)
+
+    results = capsys.readouterr().out
+    assert f"YAML config written to: {yaml_output_file}" in results
+
+    mock_open_write.assert_any_call(str(yaml_output_file), 'w')
+    handle = mock_open_write()
+    handle.write.assert_called()
