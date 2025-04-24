@@ -1,3 +1,9 @@
+## 0.13.0 (2025-04-24)
+
+### Feat
+
+- **cli**: allow overriding default config filename via CLI
+
 ## 0.12.0 (2025-04-24)
 
 ### Feat
