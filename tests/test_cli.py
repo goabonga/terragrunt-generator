@@ -159,13 +159,12 @@ def test_main_repo_exception(
 
     results = capsys.readouterr().out
 
-    # Check that the exception message was printed and sys.exit was called
     assert 'Test exception message' in results
     mock_exit.assert_called_once_with(1)
 
 
-@patch('generator.main.copy_terraform_module')  # empêche la vraie copie
-@patch('generator.main.read_directory')  # 👈 patch correct ici
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
 @patch('os.makedirs')
 @patch('builtins.open', new_callable=mock_open)
 def test_main_local_with_output(
@@ -174,7 +173,6 @@ def test_main_local_with_output(
     fake_tempdir = tmp_path / "mocked_temp"
     os.makedirs(fake_tempdir.as_posix(), exist_ok=True)
 
-    # Retour simulé du fichier terraform
     mock_read_dir.return_value = {
         'variable': [
             {
@@ -213,7 +211,6 @@ def test_main_local_with_output(
 
     results = capsys.readouterr().out
     assert 'terragrunt.hcl written to: ./output/terragrunt.hcl' in results
-    # mock_makedirs.assert_called_once_with('./output', exist_ok=True)
     mock_open_write.assert_any_call('./output/terragrunt.hcl', 'w')
     handle = mock_open_write()
     handle.write.assert_called()
@@ -255,7 +252,7 @@ def test_output_explicit_file_path(
 @patch('generator.main.copy_terraform_module')
 @patch('generator.main.read_directory')
 @patch('os.makedirs')
-@patch('os.path.isdir', return_value=True)  # 👈 important ici
+@patch('os.path.isdir', return_value=True)
 @patch('builtins.open', new_callable=mock_open)
 def test_output_directory_without_slash(
     mock_open_write,
@@ -284,7 +281,7 @@ def test_output_directory_without_slash(
             '-l',
             'test',
             '-o',
-            str(output_dir),  # sans slash
+            str(output_dir),
         ]
         main(args)
 

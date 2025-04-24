@@ -21,18 +21,11 @@ def generate_header(
     if 'http' in url:
         url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
-    # Check if lookup can be split and if it has at least one part after splitting
     lookup_parts = lookup.split('.')
     if len(lookup_parts) > 1:
         lookup_prefix = lookup_parts[:-1][0]
     else:
-        lookup_prefix = lookup  # Use lookup directly if it cannot be split
-
-    # yaml = (
-    #    get_yaml(lookup, variables)
-    #    .replace(f'{lookup_prefix}:', f'# {lookup_prefix}:')
-    #    .replace('\n  ', '\n#   ')
-    # )
+        lookup_prefix = lookup
 
     yaml_raw = get_yaml(lookup, variables)
     yaml_comment = yaml_raw.replace(f'{lookup_prefix}:', f'# {lookup_prefix}:').replace(
@@ -100,17 +93,12 @@ def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
 
     path = f'//{path}' if path is not None else ''
     url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
-    # source = (
-    #     f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
-    # )
+
     return f"""
 terraform {{
     source = {source}
 }}
 """
-
-
-# f'lookup(local.all.{lookup}, "enabled", true) == true ? local.source : null'
 
 
 def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
@@ -223,11 +211,10 @@ def generate(
 
     header, yaml = generate_header(name, url, path, version, lookup, variables_object)
     results: str
-    results = (
-        header  # generate_header(name, url, path, version, lookup, variables_object)
-    )
+    results = header
     results += generate_include(include)
     results += generate_locals(url, path, version, config_filename, yaml_env)
     results += generate_terraform(url, path, version, lookup)
     results += generate_inputs(variables, lookup)
+
     return results, yaml
