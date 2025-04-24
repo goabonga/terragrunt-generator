@@ -1,3 +1,9 @@
+## 0.15.0 (2025-04-24)
+
+### Feat
+
+- add --enabled flag to CLI and propagate to YAML generation
+
 ## 0.14.1 (2025-04-24)
 
 ### Fix
