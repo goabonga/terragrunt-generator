@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from shutil import copytree
 from tempfile import gettempdir
@@ -36,6 +37,13 @@ parser.add_argument(
 
 parser.add_argument('-l', '--lookup', help='define the lookup path', required=True)
 
+parser.add_argument(
+    '-o',
+    '--output',
+    help='Path to write the generated terragrunt.hcl file (default: print to stdout)',
+    default=None,
+)
+
 
 def create_working_directory() -> str:
     tempdir = f'{gettempdir()}/{uuid4()}'
@@ -56,7 +64,8 @@ def main(args=None):
     try:
         copy_terraform_module(args.url, args.version, tempdir)
     except BaseException as e:
-        print(e.args[-1:][0].decode())
+        # print(e.args[-1:][0].decode())
+        print(str(e))
         sys.exit(1)
 
     hcl_files: dict = read_directory(
@@ -72,4 +81,23 @@ def main(args=None):
         args.include,
     )
 
-    print(output)
+    if args.output is not None:
+        print(hcl_files)
+
+        if args.output.endswith('/'):
+            output_path = os.path.join(args.output, 'terragrunt.hcl')
+        elif os.path.isdir(args.output):
+            output_path = os.path.join(args.output, 'terragrunt.hcl')
+        else:
+            output_path = args.output
+
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        with open(output_path, 'w') as f:
+            f.write(output)
+
+        print(f"terragrunt.hcl written to: {output_path}")
+    else:
+        print(output)
