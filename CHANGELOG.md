@@ -1,3 +1,9 @@
+## 0.16.2 (2025-04-25)
+
+### Fix
+
+- **yaml**: properly format multiline descriptions and default values
+
 ## 0.16.1 (2025-04-24)
 
 ### Fix
