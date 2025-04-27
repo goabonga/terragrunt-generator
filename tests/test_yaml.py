@@ -1,4 +1,40 @@
-from generator.yaml import get_yaml, merge_yaml_strings
+import pytest
+
+from generator.yaml import format_description, get_yaml, merge_yaml_strings
+
+
+@pytest.mark.parametrize(
+    "description, indent, expected",
+    [
+        (
+            'This is a description.',
+            '    ',
+            'This is a description.',
+        ),
+        (
+            'This is a description.\nWith a second line.',
+            '    ',
+            'This is a description.\n    # With a second line.',
+        ),
+        (
+            'First line.\nSecond line.\nThird line.',
+            '  ',
+            'First line.\n  # Second line.\n  # Third line.',
+        ),
+        (
+            '',
+            '    ',
+            '',
+        ),
+        (
+            'Line with \\"escaped\\" quotes.',
+            '    ',
+            'Line with "escaped" quotes.',
+        ),
+    ],
+)
+def test_format_description(description, indent, expected):
+    assert format_description(description, indent) == expected
 
 
 def test_get_yaml():

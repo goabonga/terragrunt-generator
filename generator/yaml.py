@@ -1,16 +1,18 @@
 import json
 
 
+def format_description(description: str, indent: str) -> str:
+    lines = description.replace('\\"', '"').split('\n')
+    # if not lines:
+    #     return ''
+    formatted = lines[0]
+    if len(lines) > 1:
+        for line in lines[1:]:
+            formatted += f'\n{indent}# {line.lstrip()}'
+    return formatted
+
+
 def get_yaml(name: str, variables, is_enabled: bool = True) -> str:
-    def format_description(description: str, indent: str) -> str:
-        lines = description.replace('\\"', '"').split('\n')
-        if not lines:
-            return ''
-        formatted = lines[0]
-        if len(lines) > 1:
-            for line in lines[1:]:
-                formatted += f'\n{indent}# {line.lstrip()}'
-        return formatted
 
     name_parts = name.split('.')
     indent = '  ' * len(name_parts)

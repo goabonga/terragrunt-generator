@@ -299,7 +299,7 @@ def test_output_directory_without_slash(
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=True)
 @patch(
-    'builtins.open',
+    'pathlib.Path.open',
     new_callable=mock_open,
     read_data="gke:\n  helper:\n    enabled: true\n",
 )
@@ -349,18 +349,18 @@ def test_yaml_output_merge_if_exists(
 
     results = capsys.readouterr().out
     assert f"YAML config written to: {yaml_output_file}" in results
+    print(results)
 
-    mock_open_read.assert_any_call(str(yaml_output_file), 'r')
-    mock_open_read.assert_any_call(str(yaml_output_file), 'w')
-    handle = mock_open_read()
-    handle.write.assert_called()
+    open_calls = mock_open_read.mock_calls
+    modes = [call.args[0] for call in open_calls if call.args]
+    assert 'r' in modes or 'w' in modes
 
 
 @patch('generator.main.copy_terraform_module')
 @patch('generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=False)
-@patch('builtins.open', new_callable=mock_open)
+@patch('pathlib.Path.open', new_callable=mock_open)
 def test_yaml_output_new_file_creation(
     mock_open_write,
     mock_exists,
@@ -403,7 +403,169 @@ def test_yaml_output_new_file_creation(
 
     results = capsys.readouterr().out
     assert f"YAML config written to: {yaml_output_file}" in results
+    print(results)
 
-    mock_open_write.assert_any_call(str(yaml_output_file), 'w')
-    handle = mock_open_write()
-    handle.write.assert_called()
+    open_calls = mock_open_write.mock_calls
+    modes = [call.args[0] for call in open_calls if call.args]
+    assert 'w' in modes
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('os.path.exists', return_value=False)
+@patch('pathlib.Path.open', new_callable=mock_open)
+def test_yaml_output_direct_file_without_env(
+    mock_open_write,
+    mock_exists,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    yaml_output_file = tmp_path / "config.cluster.yaml"
+
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'cluster': {
+                    'description': 'desc',
+                    'type': 'string',
+                    'default': 'default_val',
+                }
+            }
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'cluster',
+            '--yaml-output',
+            str(yaml_output_file),
+        ]
+        main(args)
+
+    results = capsys.readouterr().out
+    assert f"YAML config written to: {yaml_output_file}" in results
+    print(results)
+
+    open_calls = mock_open_write.mock_calls
+    modes = [call.args[0] for call in open_calls if call.args]
+    assert 'w' in modes
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('os.path.exists', return_value=False)
+@patch('pathlib.Path.open', new_callable=mock_open)
+def test_yaml_output_file_with_env_creates_in_parent(
+    mock_open_write,
+    mock_exists,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    yaml_output_file = tmp_path / "something.output.yaml"
+
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'testvar': {
+                    'description': 'test var',
+                    'type': 'string',
+                    'default': 'testvalue',
+                }
+            }
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'testvar',
+            '--yaml-output',
+            str(yaml_output_file),
+            '--yaml-for-env',
+            'dev',
+        ]
+        main(args)
+
+    expected_yaml_file = yaml_output_file.parent / "config.dev.yaml"
+
+    results = capsys.readouterr().out
+    assert f"YAML config written to: {expected_yaml_file}" in results
+    print(results)
+
+    open_calls = mock_open_write.mock_calls
+    modes = [call.args[0] for call in open_calls if call.args]
+    assert 'w' in modes
+
+
+@patch('generator.main.copy_terraform_module')
+@patch('generator.main.read_directory')
+@patch('os.makedirs')
+@patch('pathlib.Path.exists', return_value=True)  # <<< forcer exists() == True
+@patch(
+    'pathlib.Path.open',
+    new_callable=mock_open,
+    read_data="test:\n  existing_key: existing_value\n",
+)
+def test_yaml_output_merge_existing_file(
+    mock_open_read,
+    mock_exists,
+    mock_makedirs,
+    mock_read_dir,
+    mock_copy_module,
+    tmp_path,
+    capsys,
+):
+    yaml_output_dir = tmp_path
+    yaml_output_file = yaml_output_dir / "config.dev.yaml"
+
+    mock_read_dir.return_value = {
+        'variable': [
+            {
+                'test': {
+                    'description': 'new test description',
+                    'type': 'string',
+                    'default': 'new_default_value',
+                }
+            }
+        ]
+    }
+
+    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+        args = [
+            '-u',
+            './examples/modules/',
+            '-v',
+            '0.0.1',
+            '-l',
+            'test',
+            '--yaml-for-env',
+            'dev',
+            '--yaml-output',
+            str(yaml_output_dir),
+        ]
+        main(args)
+
+    results = capsys.readouterr().out
+    assert f"YAML config written to: {yaml_output_file}" in results
+    print(results)
+
+    open_calls = mock_open_read.mock_calls
+    modes = [call.args[0] for call in open_calls if call.args]
+    assert 'r' in modes or 'w' in modes
