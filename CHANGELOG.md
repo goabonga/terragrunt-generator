@@ -1,3 +1,9 @@
+## 0.17.0 (2025-04-27)
+
+### Feat
+
+- **cli**: support multiple --yaml-output and --yaml-for-env options
+
 ## 0.16.2 (2025-04-25)
 
 ### Fix
