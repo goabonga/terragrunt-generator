@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
@@ -66,14 +67,16 @@ parser.add_argument(
 
 parser.add_argument(
     '--yaml-output',
-    help='Directory to write the generated YAML config file (it will be merged if it already exists).',
-    default=None,
+    help='Directories to write the generated YAML config file (can be specified multiple times).',
+    action='append',
+    default=[],
 )
 
 parser.add_argument(
     '--yaml-for-env',
-    help='Environment name used to generate the YAML file (e.g., config.dev.yaml).',
-    default=None,
+    help='Environment names used to generate YAML files (e.g., dev, prod).',
+    action='append',
+    default=[],
 )
 
 parser.add_argument(
@@ -94,6 +97,23 @@ def copy_terraform_module(url: str, version: str, path: str):
         copytree(url, path)
     else:
         clone(url, path, version)
+
+
+def write_hcl_file(args, output):
+
+    if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
+        output_path = os.path.join(args.output, 'terragrunt.hcl')
+    else:
+        output_path = args.output
+
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    with open(output_path, 'w') as f:
+        f.write(output)
+
+    print(f"terragrunt.hcl written to: {output_path}")
 
 
 def main(args=None):
@@ -119,51 +139,48 @@ def main(args=None):
         include=args.include,
         config_filename=(
             f"config.{args.yaml_for_env}.yaml"
-            if args.yaml_for_env
+            if len(args.yaml_for_env) > 0
             else (
-                os.path.basename(args.yaml_output)
-                if args.yaml_output is not None
+                os.path.basename(args.yaml_output[0])
+                if len(args.yaml_output) > 0
                 else "config.yaml"
             )
         ),
-        yaml_env=args.yaml_for_env,
+        yaml_env=args.yaml_for_env[0] if len(args.yaml_for_env) > 0 else None,
         enabled=args.enabled,
     )
 
-    if args.yaml_output is not None:
-        config_filename = (
-            f"config.{args.yaml_for_env}.yaml" if args.yaml_for_env else "config.yaml"
-        )
-        yaml_output_path = os.path.join(args.yaml_output, config_filename)
+    for yaml_output in args.yaml_output:
+        yaml_output_path = Path(yaml_output)
 
-        if os.path.exists(yaml_output_path):
-            with open(yaml_output_path, 'r') as f:
-                existing_yaml = f.read()
-            final_yaml = merge_yaml_strings(existing_yaml, yanl)
-        else:
-            final_yaml = yanl
+        envs = args.yaml_for_env if args.yaml_for_env else [None]
 
-        os.makedirs(os.path.dirname(yaml_output_path), exist_ok=True)
+        for env in envs:
+            if yaml_output_path.is_dir() or str(yaml_output_path).endswith('/'):
+                config_filename = f"config.{env}.yaml" if env else "config.yaml"
+                final_path = yaml_output_path / config_filename
+            else:
+                # cas où l'utilisateur donne directement un fichier
+                if env:
+                    final_path = yaml_output_path.parent / f"config.{env}.yaml"
+                else:
+                    final_path = yaml_output_path
 
-        with open(yaml_output_path, 'w') as f:
-            f.write(final_yaml)
+            final_path.parent.mkdir(parents=True, exist_ok=True)
 
-        print(f"YAML config written to: {yaml_output_path}")
+            if final_path.exists():
+                with final_path.open('r') as f:
+                    existing_yaml = f.read()
+                final_yaml = merge_yaml_strings(existing_yaml, yanl)
+            else:
+                final_yaml = yanl
+
+            with final_path.open('w') as f:
+                f.write(final_yaml)
+
+            print(f"YAML config written to: {final_path}")
 
     if args.output is not None:
-
-        if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
-            output_path = os.path.join(args.output, 'terragrunt.hcl')
-        else:
-            output_path = args.output
-
-        output_dir = os.path.dirname(output_path)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-
-        with open(output_path, 'w') as f:
-            f.write(output)
-
-        print(f"terragrunt.hcl written to: {output_path}")
+        write_hcl_file(args, output)
     else:
         print(output)
