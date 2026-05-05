@@ -19,7 +19,7 @@ setup(
         'dev': [
             'pytest==8.3.3',
             'pytest-cov==5.0.0',
-            'black==24.8.0',
+            'black==26.3.1',
             'isort==5.13.2',
             'commitizen==3.29.0',
             'flake8==7.1.1',
