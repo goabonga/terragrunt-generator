@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+# multicz.toml - versioning, changelog and tagging for the single
+# terragrunt-generator component. Driven by Conventional Commits.
+# Docs: https://goabonga.github.io/multicz/
+
+[project]
+commit_convention = "conventional"
+tag_format = "v{version}"
+initial_version = "0.17.1"
+# Regenerate uv.lock after each bump so the lockfile tracks the new
+# version. Without `allow`, multicz silently skips the hook and the
+# next `uv sync --frozen` in CI fails on lockfile drift.
+post_bump_policy = "allow"
+state_file = ".multicz/state.json"
+
+# Custom commit types layered on top of the conventional defaults.
+# `deprecate:` announces an upcoming removal (raises a
+# `DeprecationWarning` in the code) and `remove:` performs the actual
+# removal after the n+2 minor window described in docs/stability.md.
+# Both bump the minor: the deprecation cycle is the breaking-change
+# announcement, so the removal itself is not breaking.
+[project.bump_rules]
+feat = "minor"
+fix = "patch"
+perf = "patch"
+revert = "patch"
+deprecate = "minor"
+remove = "minor"
+
+# CHANGELOG layout aligned on Keep-a-Changelog. multicz routes each
+# commit to the section whose `types` list contains its type. Order
+# matters: sections render in declaration order.
+[[project.changelog_sections]]
+title = "Added"
+types = ["feat"]
+
+[[project.changelog_sections]]
+title = "Deprecated"
+types = ["deprecate"]
+
+[[project.changelog_sections]]
+title = "Removed"
+types = ["remove"]
+
+[[project.changelog_sections]]
+title = "Fixed"
+types = ["fix"]
+
+[[project.changelog_sections]]
+title = "Performance"
+types = ["perf"]
+
+[components.terragrunt-generator]
+paths = ["src/**", "pyproject.toml"]
+bump_files = [
+    { file = "pyproject.toml", key = "project.version" },
+    { file = "src/terragrunt_generator/__init__.py", key = "regex:version\\s*=\\s*[\"']([^\"']+)[\"']" },
+]
+changelog = "CHANGELOG.md"
+post_bump = ["uv lock"]
+
+[[components.terragrunt-generator.artifacts]]
+type = "pypi"
+ref = "terragrunt-generator=={version}"
