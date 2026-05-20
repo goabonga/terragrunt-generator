@@ -7,7 +7,11 @@
 
 [project]
 commit_convention = "conventional"
-tag_format = "v{version}"
+# Match the existing tag history, which uses bare versions (0.17.0,
+# 0.16.2, ...). Using "v{version}" would only match the stray v0.4.0
+# tag and make multicz compute the next bump from 0.4.0 instead of the
+# real latest release.
+tag_format = "{version}"
 initial_version = "0.17.1"
 # Regenerate uv.lock after each bump so the lockfile tracks the new
 # version. Without `allow`, multicz silently skips the hook and the
