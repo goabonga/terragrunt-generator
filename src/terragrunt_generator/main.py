@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 import argparse
 import os
 import sys
@@ -6,15 +9,15 @@ from shutil import copytree
 from tempfile import gettempdir
 from uuid import uuid4
 
-from generator import __name__, __version__
-from generator.generate import generate
-from generator.git import clone
-from generator.reader import read_directory
-from generator.utils import is_local
-from generator.yaml import merge_yaml_strings
+from terragrunt_generator import __prog__, __version__
+from terragrunt_generator.generate import generate
+from terragrunt_generator.git import clone
+from terragrunt_generator.reader import read_directory
+from terragrunt_generator.utils import is_local
+from terragrunt_generator.yaml import merge_yaml_strings
 
 parser = argparse.ArgumentParser(
-    prog=__name__,
+    prog=__prog__,
     description='Generate a terragrunt.hcl configuration file from a Terraform module.',
 )
 

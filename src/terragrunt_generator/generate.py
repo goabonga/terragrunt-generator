@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 import json
 import os
 
-from generator.yaml import get_yaml
+from terragrunt_generator.yaml import get_yaml
 
 
 def generate_header(
@@ -10,23 +13,18 @@ def generate_header(
     path: str,
     version: str,
     lookup: str,
-    variables: map = {
-        'mandatories': {},
-        'optionals': {},
-        'nullables': {},
-    },
+    variables: dict = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
+    if variables is None:
+        variables = {'mandatories': {}, 'optionals': {}, 'nullables': {}}
     lookup = lookup.replace('local.all', '')
     path = path or ''
     if 'http' in url:
         url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
     lookup_parts = lookup.split('.')
-    if len(lookup_parts) > 1:
-        lookup_prefix = lookup_parts[:-1][0]
-    else:
-        lookup_prefix = lookup
+    lookup_prefix = lookup_parts[:-1][0] if len(lookup_parts) > 1 else lookup
 
     yaml_raw = get_yaml(lookup, variables, enabled)
     yaml_comment = yaml_raw.replace(f'{lookup_prefix}:', f'# {lookup_prefix}:').replace(
@@ -102,11 +100,11 @@ terraform {{
 """
 
 
-def generate_inputs(variables: list = [], lookup: str = 'local.all') -> str:
+def generate_inputs(variables: list = None, lookup: str = 'local.all') -> str:
     content_fisrt: str = ''
     content_next: str = ''
     content_nullable: str = ''
-    variables: list = sorted(variables, key=lambda d: d['name'], reverse=False)
+    variables: list = sorted(variables or [], key=lambda d: d['name'], reverse=False)
     for variable in variables:
         description = (
             variable.get('description', '')
@@ -165,7 +163,7 @@ def parse_variables(variables: list) -> list:
     for variable in variables:
         for k in variable:
             v: dict = variable[k].copy()
-            if v.get('type', None) is not None:
+            if v.get('type') is not None:
                 v['type'] = v['type'].replace('${', '').replace('}', '')
             if 'default' not in list(v.keys()):
                 v['mandatory'] = True

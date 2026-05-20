@@ -1,9 +1,12 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 from unittest.mock import patch
 
-from generator.git import clone
+from terragrunt_generator.git import clone
 
 
-@patch('generator.git.Repo.clone_from')
+@patch('terragrunt_generator.git.Repo.clone_from')
 def test_clone_repo(repo):
     url: str = 'https://gitserver.com/test/test.git'
     path: str = 'moudles/test'

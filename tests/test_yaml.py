@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 import pytest
 
-from generator.yaml import format_description, get_yaml, merge_yaml_strings
+from terragrunt_generator.yaml import format_description, get_yaml, merge_yaml_strings
 
 
 @pytest.mark.parametrize(

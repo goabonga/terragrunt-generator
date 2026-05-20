@@ -1,4 +1,7 @@
-from generator.generate import (
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+from terragrunt_generator.generate import (
     generate,
     generate_header,
     generate_include,

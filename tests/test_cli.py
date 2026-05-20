@@ -1,9 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+import contextlib
 import os
 from unittest.mock import mock_open, patch
 
 import pytest
 
-from generator.main import main
+from terragrunt_generator.main import main
 
 data: str = """
 variable "test" {
@@ -15,10 +19,8 @@ variable "test" {
 
 @pytest.mark.parametrize('option', ('-h', '--help'))
 def test_help(capsys, option):
-    try:
+    with contextlib.suppress(SystemExit):
         main([option])
-    except SystemExit:
-        pass
     output = capsys.readouterr().out
     assert (
         'Generate a terragrunt.hcl configuration file from a Terraform module.'
@@ -85,7 +87,7 @@ inputs = merge({
     assert results == expected
 
 
-@patch('generator.git.Repo.clone_from')
+@patch('terragrunt_generator.git.Repo.clone_from')
 @patch('os.listdir', return_value=['test.tf'])
 @patch('builtins.open', new_callable=mock_open, read_data=data)
 def test_main_repo(mock_git, mock_dir, mock_file, capsys):
@@ -138,11 +140,11 @@ inputs = {
     assert results == expected
 
 
-@patch('generator.git.Repo.clone_from')
+@patch('terragrunt_generator.git.Repo.clone_from')
 @patch('os.listdir', return_value=['test.tf'])
 @patch('builtins.open', new_callable=mock_open, read_data=data)
 @patch(
-    'generator.main.copy_terraform_module',
+    'terragrunt_generator.main.copy_terraform_module',
     side_effect=Exception(b'Test exception message'),
 )
 @patch('sys.exit')
@@ -166,8 +168,8 @@ def test_main_repo_exception(
     mock_exit.assert_called_once_with(1)
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('builtins.open', new_callable=mock_open)
 def test_main_local_with_output(
@@ -198,7 +200,7 @@ def test_main_local_with_output(
     }
 
     with patch(
-        'generator.main.create_working_directory', return_value=fake_tempdir.as_posix()
+        'terragrunt_generator.main.create_working_directory', return_value=fake_tempdir.as_posix()
     ):
         args = [
             '-u',
@@ -219,8 +221,8 @@ def test_main_local_with_output(
     handle.write.assert_called()
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('builtins.open', new_callable=mock_open)
 def test_output_explicit_file_path(
@@ -234,7 +236,7 @@ def test_output_explicit_file_path(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -252,8 +254,8 @@ def test_output_explicit_file_path(
     handle.write.assert_called()
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.isdir', return_value=True)
 @patch('builtins.open', new_callable=mock_open)
@@ -275,7 +277,7 @@ def test_output_directory_without_slash(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -294,8 +296,8 @@ def test_output_directory_without_slash(
     handle.write.assert_called()
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=True)
 @patch(
@@ -332,7 +334,7 @@ def test_yaml_output_merge_if_exists(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -356,8 +358,8 @@ def test_yaml_output_merge_if_exists(
     assert 'r' in modes or 'w' in modes
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=False)
 @patch('pathlib.Path.open', new_callable=mock_open)
@@ -386,7 +388,7 @@ def test_yaml_output_new_file_creation(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -410,8 +412,8 @@ def test_yaml_output_new_file_creation(
     assert 'w' in modes
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=False)
 @patch('pathlib.Path.open', new_callable=mock_open)
@@ -438,7 +440,7 @@ def test_yaml_output_direct_file_without_env(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -460,8 +462,8 @@ def test_yaml_output_direct_file_without_env(
     assert 'w' in modes
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('os.path.exists', return_value=False)
 @patch('pathlib.Path.open', new_callable=mock_open)
@@ -488,7 +490,7 @@ def test_yaml_output_file_with_env_creates_in_parent(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',
@@ -514,8 +516,8 @@ def test_yaml_output_file_with_env_creates_in_parent(
     assert 'w' in modes
 
 
-@patch('generator.main.copy_terraform_module')
-@patch('generator.main.read_directory')
+@patch('terragrunt_generator.main.copy_terraform_module')
+@patch('terragrunt_generator.main.read_directory')
 @patch('os.makedirs')
 @patch('pathlib.Path.exists', return_value=True)  # <<< forcer exists() == True
 @patch(
@@ -547,7 +549,7 @@ def test_yaml_output_merge_existing_file(
         ]
     }
 
-    with patch('generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
         args = [
             '-u',
             './examples/modules/',

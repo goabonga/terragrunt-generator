@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 from unittest.mock import MagicMock, mock_open, patch
 
-from generator.reader import read_directory, read_file
+from terragrunt_generator.reader import read_directory, read_file
 
 data: str = """
 variable "test" {

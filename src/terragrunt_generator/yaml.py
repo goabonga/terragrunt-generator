@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
 import json
 
 
@@ -24,9 +27,7 @@ def get_yaml(name: str, variables, is_enabled: bool = True) -> str:
             description = format_description(variable.get('description', ''), indent)
 
             text += f"{indent}# {variable['name']} - {description}\n"
-            if var_type == 'nullables':
-                text += f"{indent}# {variable['name']}: {json.dumps(default) if default else ''}\n"
-            elif var_type == 'optionals':
+            if var_type == 'nullables' or var_type == 'optionals':
                 text += f"{indent}# {variable['name']}: {json.dumps(default) if default else ''}\n"
             else:
                 text += f"{indent}{variable['name']}: {json.dumps(default) if default else ''}\n"
