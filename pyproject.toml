@@ -1,31 +1,125 @@
-[tool.isort]
-profile = "black"
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
-[tool.black]
-skip-string-normalization = true
-line-length = 88  # Specify the line length
-target-version = ['py37']  # Specify your Python version
-include = '\.pyi?$'
-exclude = '''  # Specify the files/dirs that should be ignored by the black formatter
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
-
-[tool.commitizen]
-name = "cz_conventional_commits"
+[project]
+name = "terragrunt-generator"
 version = "0.17.1"
-tag_format = "$major.$minor.$patch$prerelease"
-version_files = [
-    "pyproject.toml:version",
-    "generator/__init__.py",
+description = "Generate documented terragrunt.hcl manifests from Terraform module variables."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chris", email = "goabonga@pm.me" }]
+keywords = ["terraform", "terragrunt", "hcl", "iac", "generator"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: System :: Systems Administration",
 ]
+dependencies = [
+    # Pinned to the 4.x line: python-hcl2 5+ changed its parse output
+    # (quoted string values, __is_block__ markers) in a way the
+    # generator does not yet handle. Bumping the major is a follow-up
+    # feature, not part of this modernization.
+    "python-hcl2>=4.3,<5",
+    "GitPython>=3.1",
+]
+
+[project.scripts]
+terragrunt-generator = "terragrunt_generator.main:main"
+
+[project.urls]
+Homepage = "https://github.com/goabonga/terragrunt-generator"
+Documentation = "https://goabonga.github.io/terragrunt-generator/"
+Repository = "https://github.com/goabonga/terragrunt-generator"
+Issues = "https://github.com/goabonga/terragrunt-generator/issues"
+Changelog = "https://github.com/goabonga/terragrunt-generator/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/terragrunt_generator"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/terragrunt_generator",
+    "tests",
+    "LICENSE",
+    "README.md",
+    "pyproject.toml",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18",
+    "pre-commit>=4.0",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.13",
+]
+doc = [
+    "zensical",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = ["-ra", "--strict-config", "--strict-markers", "--import-mode=importlib"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/terragrunt_generator"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+src = ["src"]
+extend-exclude = [".venv", "dist", "build"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+# E501 (line length) is enforced by the formatter, not the linter:
+# argparse help strings and the HCL test fixtures legitimately run
+# past 88 columns. This matches the previous flake8 configuration.
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+disallow_any_generics = true
+disallow_untyped_decorators = true
+no_implicit_reexport = true
+extra_checks = true
+exclude = ["build/", "dist/", "site/", ".venv/"]
