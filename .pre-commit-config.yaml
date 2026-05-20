@@ -1,42 +1,113 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+# Local pre-commit configuration. Mirrors the CI quality gates so the
+# loop "lint / format / type-check / SPDX headers / commit-msg" runs
+# before the commit lands instead of after the push.
+#
+# Install once per clone: `uv run pre-commit install` - this installs
+# the pre-commit AND commit-msg hooks (see `default_install_hook_types`
+# below). Run manually on the full tree: `uv run pre-commit run --all-files`.
+
+default_install_hook_types: [pre-commit, commit-msg]
+default_language_version:
+  python: python3.13
+
 repos:
-- hooks:
-  - id: end-of-file-fixer
-  - id: check-added-large-files
-  - id: check-merge-conflict
-  - id: check-builtin-literals
-  - id: check-toml
-  - id: double-quote-string-fixer
-  - id: fix-byte-order-marker
-  - id: trailing-whitespace
-    exclude: tests/
-  - id: check-yaml
-  repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
-- hooks:
-  - id: isort
-  repo: https://github.com/pycqa/isort
-  rev: 5.12.0
-- hooks:
-    - id: black
-  repo: https://github.com/ambv/black
-  rev: 23.3.0
-- hooks:
-  - id: flake8
-  repo: https://github.com/pycqa/flake8
-  rev: 6.0.0
-- hooks:
-  - args:
-    - --py3-plus
-    - --py36-plus
-    id: pyupgrade
-  repo: https://github.com/asottile/pyupgrade
-  rev: v3.3.1
-- hooks:
-  - id: autopep8
-  repo: https://github.com/pre-commit/mirrors-autopep8
-  rev: v2.0.2
-- hooks:
-  - id: commitizen
-    stages: [commit-msg]
-  repo: https://github.com/commitizen-tools/commitizen
-  rev: v2.42.1
+  # Generic hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  # Lint + format + type-check via the project venv (uv run) so the
+  # tools match exactly what CI installs from uv.lock.
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        require_serial: true
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        require_serial: true
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run mypy
+        language: system
+        files: ^src/.*\.py$
+        pass_filenames: false
+        args: [src]
+        require_serial: true
+
+  # SPDX license headers. One hook per target path because the helper
+  # script takes a single --path.
+  - repo: local
+    hooks:
+      - id: spdx-headers-src
+        name: SPDX headers (src/)
+        entry: python scripts/add_license_header.py --path src --types py --check
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+      - id: spdx-headers-tests
+        name: SPDX headers (tests/)
+        entry: python scripts/add_license_header.py --path tests --types py --check
+        language: system
+        pass_filenames: false
+        files: ^tests/.*\.py$
+      - id: spdx-headers-workflows
+        name: SPDX headers (.github/)
+        entry: python scripts/add_license_header.py --path .github --types yml --check
+        language: system
+        pass_filenames: false
+        files: ^\.github/.*\.ya?ml$
+      - id: spdx-headers-scripts
+        name: SPDX headers (scripts/)
+        entry: python scripts/add_license_header.py --path scripts --types py --check
+        language: system
+        pass_filenames: false
+        files: ^scripts/.*\.py$
+      - id: spdx-headers-root-toml
+        name: SPDX headers (root *.toml)
+        entry: python scripts/add_license_header.py --path . --types toml --check
+        language: system
+        pass_filenames: false
+        files: ^[^/]+\.toml$
+
+  # Conventional Commits validation on the commit message itself.
+  # `--strict` is intentionally NOT enabled: it would reject the
+  # `fixup!` / `squash!` prefixes that `git commit --fixup=<sha>`
+  # produces, and the autosquash workflow is the project's preferred
+  # way of editing existing commits.
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - perf
+          - refactor
+          - docs
+          - test
+          - chore
+          - ci
+          - build
+          - style
+          # Custom types used for the n+2 deprecation cycle - see
+          # docs/stability.md. Both map to a minor bump in multicz.
+          - deprecate
+          - remove
