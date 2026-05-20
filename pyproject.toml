@@ -24,11 +24,11 @@ classifiers = [
     "Topic :: System :: Systems Administration",
 ]
 dependencies = [
-    # Pinned to the 4.x line: python-hcl2 5+ changed its parse output
-    # (quoted string values, __is_block__ markers) in a way the
-    # generator does not yet handle. Bumping the major is a follow-up
-    # feature, not part of this modernization.
-    "python-hcl2>=4.3,<5",
+    # Pinned exactly: python-hcl2 8.x emits a reversible AST (quoted keys
+    # and string values, __is_block__ markers). reader.py normalizes it
+    # back via SerializationOptions(strip_string_quotes, explicit_blocks).
+    # Bump this pin deliberately after re-validating the parser output.
+    "python-hcl2==8.1.2",
     # Pinned exactly: GitPython 3.1.50 carries the worktree autodiscovery
     # and config-key validation fixes. Bump this pin deliberately after
     # validating each new release.
@@ -128,3 +128,9 @@ disallow_untyped_decorators = true
 no_implicit_reexport = true
 extra_checks = true
 exclude = ["build/", "dist/", "site/", ".venv/"]
+
+# python-hcl2 ships no type information (no py.typed / stubs); treat its
+# imports as untyped instead of failing the strict run.
+[[tool.mypy.overrides]]
+module = ["hcl2.*"]
+ignore_missing_imports = true
