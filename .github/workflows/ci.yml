@@ -293,7 +293,11 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ needs.release.outputs.version }}"
-          tag="v${version}"
+          # multicz tags with tag_format = "{version}" (bare, e.g. 1.0.0).
+          # Use the same tag here: a "v${version}" tag does not exist when
+          # release-notes runs (it returns empty notes) and `gh release
+          # create` would then create a duplicate "v1.0.0" tag.
+          tag="${version}"
           notes=$(uv tool run multicz release-notes --tag "$tag")
           gh release create "$tag" --title "$tag" --notes "$notes" dist/*
 
