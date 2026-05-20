@@ -620,7 +620,7 @@ doc = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gitpython", specifier = ">=3.1" },
+    { name = "gitpython", specifier = "==3.1.50" },
     { name = "python-hcl2", specifier = ">=4.3,<5" },
 ]
 

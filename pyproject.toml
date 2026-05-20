@@ -29,7 +29,10 @@ dependencies = [
     # generator does not yet handle. Bumping the major is a follow-up
     # feature, not part of this modernization.
     "python-hcl2>=4.3,<5",
-    "GitPython>=3.1",
+    # Pinned exactly: GitPython 3.1.50 carries the worktree autodiscovery
+    # and config-key validation fixes. Bump this pin deliberately after
+    # validating each new release.
+    "GitPython==3.1.50",
 ]
 
 [project.scripts]
