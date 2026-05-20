@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from shutil import copytree
 from tempfile import gettempdir
+from typing import Any
 from uuid import uuid4
 
 from terragrunt_generator import __prog__, __version__
@@ -95,14 +96,14 @@ def create_working_directory() -> str:
     return tempdir
 
 
-def copy_terraform_module(url: str, version: str, path: str):
+def copy_terraform_module(url: str, version: str, path: str) -> None:
     if is_local(url):
         copytree(url, path)
     else:
         clone(url, path, version)
 
 
-def write_hcl_file(args, output):
+def write_hcl_file(args: argparse.Namespace, output: str) -> None:
 
     if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
         output_path = os.path.join(args.output, 'terragrunt.hcl')
@@ -119,8 +120,8 @@ def write_hcl_file(args, output):
     print(f"terragrunt.hcl written to: {output_path}")
 
 
-def main(args=None):
-    args: map = parser.parse_args(args)
+def main(argv: list[str] | None = None) -> None:
+    args = parser.parse_args(argv)
 
     tempdir: str = create_working_directory()
     try:
@@ -129,7 +130,7 @@ def main(args=None):
         print(str(e))
         sys.exit(1)
 
-    hcl_files: dict = read_directory(
+    hcl_files: dict[str, Any] = read_directory(
         f"{tempdir}/{'' if args.path is None else args.path}"
     )
 

@@ -3,6 +3,7 @@
 
 import json
 import os
+from typing import Any
 
 from terragrunt_generator.yaml import get_yaml
 
@@ -10,10 +11,10 @@ from terragrunt_generator.yaml import get_yaml
 def generate_header(
     name: str,
     url: str,
-    path: str,
+    path: str | None,
     version: str,
     lookup: str,
-    variables: dict = None,
+    variables: dict[str, Any] | None = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
     if variables is None:
@@ -55,11 +56,11 @@ include {{
 
 
 def generate_locals(
-    url: str = None,
-    path: str = None,
-    version: str = None,
+    url: str,
+    path: str | None = None,
+    version: str = "",
     config_filename: str = "config.yaml",
-    yaml_env: str = None,
+    yaml_env: str | None = None,
 ) -> str:
     config_line = (
         'format("config.%s.yaml", local.environment)'
@@ -81,7 +82,9 @@ locals {{
 """
 
 
-def generate_terraform(url: str, path: str, version: str, lookup: str) -> str:
+def generate_terraform(
+    url: str, path: str | None, version: str, lookup: str
+) -> str:
     lookups = lookup.split('.')
     previous = "local.all"
     source = ""
@@ -100,11 +103,13 @@ terraform {{
 """
 
 
-def generate_inputs(variables: list = None, lookup: str = 'local.all') -> str:
+def generate_inputs(
+    variables: list[dict[str, Any]] | None = None, lookup: str = 'local.all'
+) -> str:
     content_fisrt: str = ''
     content_next: str = ''
     content_nullable: str = ''
-    variables: list = sorted(variables or [], key=lambda d: d['name'], reverse=False)
+    variables = sorted(variables or [], key=lambda d: d['name'], reverse=False)
     for variable in variables:
         description = (
             variable.get('description', '')
@@ -135,7 +140,7 @@ def generate_inputs(variables: list = None, lookup: str = 'local.all') -> str:
             else:
                 content_next += _content
         else:
-            name: str = variable.get('name')
+            name = variable.get('name')
             content_nullable += f'\n  # {name} - {description}'
             content_nullable += f'\n  (lookup(local.all.{lookup}, "{name}", null)'
             content_nullable += ' == null ? {} : '
@@ -155,14 +160,16 @@ inputs = {{
 }}"""
 
 
-def parse_variables(variables: list) -> list:
-    outputs: list = []
-    mandatories: list = []
-    optionals: list = []
-    nullables: list = []
+def parse_variables(
+    variables: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    outputs: list[dict[str, Any]] = []
+    mandatories: list[dict[str, Any]] = []
+    optionals: list[dict[str, Any]] = []
+    nullables: list[dict[str, Any]] = []
     for variable in variables:
         for k in variable:
-            v: dict = variable[k].copy()
+            v: dict[str, Any] = variable[k].copy()
             if v.get('type') is not None:
                 v['type'] = v['type'].replace('${', '').replace('}', '')
             if 'default' not in list(v.keys()):
@@ -191,14 +198,14 @@ def parse_variables(variables: list) -> list:
 
 def generate(
     url: str,
-    path: str,
+    path: str | None,
     version: str,
     lookup: str,
-    hcl_files: list,
+    hcl_files: dict[str, Any],
     include: bool = True,
-    name: str = None,
+    name: str | None = None,
     config_filename: str = "config.yaml",
-    yaml_env: str = None,
+    yaml_env: str | None = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
     variables, variables_object = parse_variables(hcl_files['variable'])

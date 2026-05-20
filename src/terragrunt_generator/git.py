@@ -4,5 +4,5 @@
 from git.repo.base import Repo
 
 
-def clone(url: str, path: str, version: str):
+def clone(url: str, path: str, version: str) -> None:
     Repo.clone_from(url, path, branch=version)

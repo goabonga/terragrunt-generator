@@ -3,19 +3,20 @@
 
 import contextlib
 import os
+from typing import Any
 
 import hcl2
 
 
-def read_file(path: str) -> dict:
-    datas: dict = {}
+def read_file(path: str) -> dict[str, Any]:
+    datas: dict[str, Any] = {}
     with open(path) as file:
-        datas = hcl2.load(file)
+        datas = hcl2.load(file)  # type: ignore[attr-defined]
     return datas
 
 
-def read_directory(path: str) -> dict:
-    datas = {}
+def read_directory(path: str) -> dict[str, Any]:
+    datas: dict[str, Any] = {}
     for file in os.listdir(path):
         if file.endswith('.tf'):
             with contextlib.suppress(Exception):

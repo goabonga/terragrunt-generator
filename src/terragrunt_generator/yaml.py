@@ -2,6 +2,7 @@
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
 import json
+from typing import Any
 
 
 def format_description(description: str, indent: str) -> str:
@@ -15,7 +16,9 @@ def format_description(description: str, indent: str) -> str:
     return formatted
 
 
-def get_yaml(name: str, variables, is_enabled: bool = True) -> str:
+def get_yaml(
+    name: str, variables: dict[str, Any], is_enabled: bool = True
+) -> str:
 
     name_parts = name.split('.')
     indent = '  ' * len(name_parts)
