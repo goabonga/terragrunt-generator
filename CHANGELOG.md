@@ -10,6 +10,7 @@ by [multicz](https://github.com/goabonga/multicz).
 
 ### Breaking changes
 
+- relicense from GPL-3.0 to MIT (`4c6cdce`)
 - rename package to terragrunt_generator under src/ layout (`24f8104`)
 
 ## [0.17.1] - 2026-05-05
