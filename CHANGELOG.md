@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.0.0] - 2026-05-20
+
+### Breaking changes
+
+- rename package to terragrunt_generator under src/ layout (`24f8104`)
+
 ## [0.17.1] - 2026-05-05
 
 ### Fixed

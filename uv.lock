@@ -599,7 +599,7 @@ wheels = [
 
 [[package]]
 name = "terragrunt-generator"
-version = "0.17.1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "gitpython" },
