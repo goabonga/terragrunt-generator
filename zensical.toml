@@ -16,5 +16,8 @@ nav = [
     { "Introduction" = "index.md" },
     { "Installation" = "installation.md" },
     { "Usage" = "usage.md" },
+    { "Examples" = [
+        { "Bootstrap a GCP infra" = "bootstrap-gcp.md" },
+    ] },
     { "Stability & deprecation" = "stability.md" },
 ]
