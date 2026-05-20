@@ -222,6 +222,49 @@ def test_main_local_with_output(
     handle.write.assert_called()
 
 
+def test_main_module_importable():
+    # Importing the module entry point covers the `from .main import main`
+    # line; the `if __name__ == "__main__"` guard is excluded from
+    # coverage and does not run on import.
+    import terragrunt_generator.__main__ as entry
+
+    assert entry.main is main
+
+
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("builtins.open", new_callable=mock_open)
+def test_output_bare_filename_no_directory(
+    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+):
+    # A bare filename has no directory component, so write_hcl_file skips
+    # os.makedirs (the False branch of `if output_dir`).
+    mock_read_dir.return_value = {
+        "variable": [
+            {"test": {"description": "", "type": "string", "default": "value"}}
+        ]
+    }
+
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
+        args = [
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "test",
+            "-o",
+            "terragrunt.hcl",
+        ]
+        main(args)
+
+    mock_open_write.assert_any_call("terragrunt.hcl", "w")
+    mock_makedirs.assert_not_called()
+
+
 @patch("terragrunt_generator.main.copy_terraform_module")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")

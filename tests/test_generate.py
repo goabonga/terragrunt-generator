@@ -46,6 +46,20 @@ def test_generate_header():
     assert results == expected
 
 
+def test_generate_header_default_variables():
+    # Omitting `variables` exercises the `variables is None` guard, which
+    # falls back to an empty mandatories/optionals/nullables mapping.
+    results, yaml = generate_header(
+        name="test",
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+    )
+    assert "# test 0.1.0" in results
+    assert "enabled: true" in yaml
+
+
 def test_generate_header_with_deep_lookup():
     url: str = "https://gitserver.com/test/test.git"
     path: str = "modules/test"
@@ -414,6 +428,23 @@ def test_parse_variables():
     )
 
     assert results == expected
+
+
+def test_parse_variables_without_type():
+    # A variable with no `type` key takes the False branch of the
+    # `v.get("type") is not None` guard, and with no `default` it is
+    # classified as a mandatory input.
+    variables: list = [{0: {"name": "test", "description": "A"}}]
+
+    outputs, grouped = parse_variables(variables)
+
+    assert outputs == [
+        {"name": 0, "description": "A", "mandatory": True, "nullable": False}
+    ]
+    assert "type" not in outputs[0]
+    assert grouped["mandatories"] == outputs
+    assert grouped["optionals"] == []
+    assert grouped["nullables"] == []
 
 
 def test_generate():

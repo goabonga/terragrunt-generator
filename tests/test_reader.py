@@ -33,13 +33,14 @@ def test_read_file_except(mock_file):
     assert error is not None
 
 
-@patch("os.listdir", return_value=["test.tf"])
+@patch("os.listdir", return_value=["README.md", "test.tf"])
 @patch("builtins.open", new_callable=mock_open, read_data=data)
 def test_read_directory(mock_file, mock_directory):
     path = "path/to/open"
     results = read_directory(path)
     mock_directory.assert_called_with(path)
-    mock_file.assert_called_with(f"{path}/test.tf")
+    # Only the .tf file is opened; non-.tf entries (README.md) are skipped.
+    mock_file.assert_called_once_with(f"{path}/test.tf")
     assert results == {"variable": [{"test": {"default": "", "type": "string"}}]}
 
 

@@ -82,10 +82,12 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+fail_under = 100
 exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
     "@(abc\\.)?abstractmethod",
+    "if __name__ == .__main__.:",
 ]
 
 [tool.ruff]
