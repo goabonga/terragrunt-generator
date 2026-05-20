@@ -1,82 +1,49 @@
+# terragrunt-generator
 
-# 🚀 terragrunt-generator 🎉
+[![CI](https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/goabonga/terragrunt-generator?logo=codecov)](https://codecov.io/gh/goabonga/terragrunt-generator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/goabonga/terragrunt-generator/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-[![codecov](https://codecov.io/gh/goabonga/terragrunt-generator/branch/main/graph/badge.svg?token=LZYOP61FF7)](https://codecov.io/gh/goabonga/terragrunt-generator)
+**terragrunt-generator** generates `terragrunt.hcl` configuration files — with
+documented inputs — from the variables exposed by a Terraform module. Point it
+at a module (a git repository or a local directory), tell it where to look up
+values, and it emits a ready-to-edit Terragrunt manifest plus an optional YAML
+config skeleton.
 
-## 🪄 What is terragrunt-generator?
+## Documentation
 
-**terragrunt-generator** is your one-stop tool to automatically generate `terragrunt.hcl` files with well-documented inputs from variables exposed by Terraform modules. The magic happens with a simple **YAML** configuration file, making your setup process as smooth as butter! 🧈✨
+The project site is published from `main` to GitHub Pages:
+<https://goabonga.github.io/terragrunt-generator/>.
 
-## 📋 Requirements
+## Requirements
 
-- Python 3.6+
+- Python 3.13+
 
-## 🔧 Installation
+## Installation
 
 ```bash
 pip install terragrunt-generator
 ```
 
-## 🎯 Usage
-
-### 🔍 Command Overview
+Or run it without installing, using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-terragrunt-generator --help
+uvx terragrunt-generator --help
 ```
 
-You'll see something like this:
-
-```plaintext
-usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
-                            [--include | --no-include] -l LOOKUP [-o OUTPUT]
-                            [--yaml-output YAML_OUTPUT]
-                            [--yaml-for-env YAML_FOR_ENV]
-                            [--enabled | --no-enabled]
-
-Generate a terragrunt.hcl configuration file from a Terraform module.
-
-options:
-  -h, --help            show this help message and exit
-  -V                    show program's version number and exit
-  -u URL, --url URL     URL or local path to the Terraform module (can be a
-                        git repo or directory).
-  -v VERSION, --version VERSION
-                        Branch, tag, or commit hash to checkout if the module
-                        is from a git repository (default: main).
-  -p PATH, --path PATH  Relative path to the module inside the repository or
-                        directory (if needed).
-  --include, --no-include
-                        Whether to include the "include" block in the
-                        generated terragrunt.hcl (default: true).
-  -l LOOKUP, --lookup LOOKUP
-                        Path used for variable lookup in the generated
-                        Terragrunt configuration.
-  -o OUTPUT, --output OUTPUT
-                        File path to write the generated terragrunt.hcl
-                        (default: print to stdout).
-  --yaml-output YAML_OUTPUT
-                        Directory to write the generated YAML config file (it
-                        will be merged if it already exists).
-  --yaml-for-env YAML_FOR_ENV
-                        Environment name used to generate the YAML file (e.g.,
-                        config.dev.yaml).
-  --enabled, --no-enabled
-                        Whether to mark the module as enabled in the YAML
-                        configuration (default: true).
-
-```
-
-### 📚 Example Usage
+## Usage
 
 ```bash
 terragrunt-generator \
--u https://github.com/terraform-google-modules/terraform-google-project-factory.git \
--v v14.2.1 \
--l 'project'
+  -u https://github.com/terraform-google-modules/terraform-google-project-factory.git \
+  -v v14.2.1 \
+  -l 'project'
 ```
 
-### 📝 Sample Output
+This reads the module's `variable` blocks and prints a `terragrunt.hcl` whose
+`inputs` are wired to a `yamldecode`-based config lookup:
 
 ```hcl
 # terraform-google-modules v14.2.1
@@ -106,10 +73,49 @@ inputs = merge({
 })
 ```
 
-## 🙌 Contribute
+See the [usage guide](https://goabonga.github.io/terragrunt-generator/usage/)
+for the full option reference and the per-environment YAML workflow.
 
-Got a cool idea? Found a bug? Contributions are welcome! Check out our [contributing guidelines](CONTRIBUTING.md) and help make `terragrunt-generator` even better! 🚀
+## Development
 
----
+```bash
+git clone https://github.com/goabonga/terragrunt-generator.git
+cd terragrunt-generator
+uv sync
 
-Enjoy automating your Terragrunt configurations with ease! 🎉
+# Quality gates (mirrored in CI).
+uv run ruff check src tests
+uv run ruff format --check src tests
+uv run mypy src
+uv run pytest --cov=terragrunt_generator
+
+# Install the pre-commit + commit-msg hooks.
+uv run pre-commit install
+```
+
+## Versioning and release
+
+Releases are automated. Every push to `main` runs
+`multicz bump --commit --tag --push` — driven by
+[Conventional Commits](https://www.conventionalcommits.org/) — then publishes
+to PyPI and deploys the docs.
+
+```bash
+# Preview the next release against the current branch.
+multicz status
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/goabonga/terragrunt-generator/blob/main/CONTRIBUTING.md)
+for the workflow, the commit-message convention, and the test/lint
+expectations. By participating you agree to the
+[Code of Conduct](https://github.com/goabonga/terragrunt-generator/blob/main/CODE_OF_CONDUCT.md).
+
+Security issues: please follow the disclosure process in
+[SECURITY.md](https://github.com/goabonga/terragrunt-generator/blob/main/SECURITY.md).
+
+## License
+
+Distributed under the
+[MIT License](https://github.com/goabonga/terragrunt-generator/blob/main/LICENSE).
