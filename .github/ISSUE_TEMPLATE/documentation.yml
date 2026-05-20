@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: Documentation
+description: Report missing, incorrect, or unclear documentation
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve the documentation!
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Missing documentation
+        - Incorrect documentation
+        - Unclear documentation
+        - Typo
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: Where is the documentation issue? (URL, file path, or section name)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be changed or added?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Fix
+      description: If you have a suggestion for the correct content, describe it here.

@@ -1,11 +1,66 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+# Dependabot v2 configuration.
 
 version: 2
+
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Python dependencies via uv.
+  - package-ecosystem: "uv"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    ignore:
+      # `hatchling` lives in the `[build-system].requires` table.
+      # Dependabot's uv FileUpdater currently cannot write back to that
+      # table (PEP 517 build-system deps are read before the rest of
+      # pyproject.toml is parsed). Bump it by hand when needed; pip-audit
+      # and osv-scanner still flag any CVEs in the installed copy.
+      - dependency-name: "hatchling"
+    groups:
+      # Bundle routine dev/doc tooling bumps into a single weekly PR.
+      dev-tools:
+        applies-to: version-updates
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pytest*"
+          - "pre-commit"
+          - "zensical"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Pinned versions of GitHub Actions in `.github/workflows/*.yml`.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    groups:
+      ci-actions:
+        applies-to: version-updates
+        patterns:
+          - "actions/*"
+          - "astral-sh/*"
+          - "google/*"
+          - "pypa/*"
+          - "codecov/*"
+          - "compilerla/*"
+          - "pre-commit/*"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+blank_issues_enabled: false
+contact_links:
+  - name: Code of Conduct
+    url: https://github.com/goabonga/terragrunt-generator/blob/main/CODE_OF_CONDUCT.md
+    about: Please read our Code of Conduct before contributing
+  - name: Security advisories
+    url: https://github.com/goabonga/terragrunt-generator/security/advisories/new
+    about: Report a vulnerability privately (do not open a public issue)

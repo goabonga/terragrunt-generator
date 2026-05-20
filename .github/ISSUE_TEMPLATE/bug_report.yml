@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill in the details below.
+
+  - type: input
+    id: version
+    attributes:
+      label: terragrunt-generator version
+      description: "Output of `terragrunt-generator -V` or `pip show terragrunt-generator`."
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue? Include the exact command line and any inputs.
+      placeholder: |
+        1. Run `terragrunt-generator -u <url> -l <lookup>`
+        2. ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include the generated output if applicable.
+    validations:
+      required: true
+
+  - type: input
+    id: module
+    attributes:
+      label: Terraform module
+      description: "URL (and ref) of the Terraform module that triggered the bug, if it is public."
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      options:
+        - "3.13"
+        - "3.14"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Traceback
+      description: Paste any relevant logs or error output.
+      render: shell
