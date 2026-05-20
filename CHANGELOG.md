@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.1.0] - 2026-05-20
+
+### Added
+
+- support python-hcl2 8.x (`e85aacb`)
+
+### Fixed
+
+- **deps**: pin GitPython to 3.1.50 (`9e9b558`)
+
 ## [1.0.0] - 2026-05-20
 
 ### Breaking changes
