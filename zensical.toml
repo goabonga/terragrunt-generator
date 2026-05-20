@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+[project]
+site_name = "terragrunt-generator"
+site_description = "Generate documented terragrunt.hcl manifests from Terraform module variables."
+site_author = "Chris"
+site_url = "https://goabonga.github.io/terragrunt-generator/"
+repo_url = "https://github.com/goabonga/terragrunt-generator"
+repo_name = "goabonga/terragrunt-generator"
+
+# Navigation tree for the published site. Ordered as a reader would
+# progress: what the tool is, how to install and run it, then the
+# stability contract that governs future changes.
+nav = [
+    { "Introduction" = "index.md" },
+    { "Installation" = "installation.md" },
+    { "Usage" = "usage.md" },
+    { "Stability & deprecation" = "stability.md" },
+]

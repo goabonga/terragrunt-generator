@@ -61,6 +61,14 @@ coverage.json
 # Sphinx documentation
 docs/_build/
 
+# Zensical site build
+site/
+.zensical/
+
+# mypy / ruff caches
+.mypy_cache/
+.ruff_cache/
+
 # PyCharm
 .idea/
 
