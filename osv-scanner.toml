@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+# OSV-Scanner ignore list. Entries here are reviewed advisories that
+# cannot be acted on yet; each carries a justification and an
+# `ignoreUntil` review date so the suppression is revisited, not
+# forgotten.
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-89"            # CVE-2025-69534 / GHSA-5wmx-573v-2qwq
+ignoreUntil = 2026-08-20
+# DoS in python-markdown: malformed HTML-like input raises an uncaught
+# AssertionError. Per OSV, ALL markdown versions are affected and no fix
+# is released yet (the latest published 3.10.2 is still vulnerable), so
+# there is nothing to upgrade to. `markdown` is a transitive dependency
+# of the docs tooling only (zensical -> pymdown-extensions, the `doc`
+# group); it is NOT in the shipped wheel (runtime deps are python-hcl2
+# and GitPython) nor the `dev` group. It only parses this repo's own
+# trusted docs at build time - no attacker-controlled markdown. Drop
+# this entry once a patched markdown is published.
+reason = "No fix available; doc-build-only transitive dep (zensical), trusted input"
