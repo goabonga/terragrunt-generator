@@ -54,10 +54,30 @@ def check_license(file_path: str) -> bool:
     return has_license(lines)
 
 
+# Directories that never carry project sources: virtualenvs, VCS
+# metadata, build output and tool caches. Pruned from the walk so a
+# scan rooted at "." does not flag third-party files (e.g. a wheel's
+# bundled Cargo.toml under .venv).
+PRUNE_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "site",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "node_modules",
+}
+
+
 def process_directory(root: str, extensions: list[str], check_only: bool) -> int:
     missing_files = []
 
-    for dirpath, _, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in PRUNE_DIRS]
         for filename in filenames:
             path = os.path.join(dirpath, filename)
             ext = os.path.splitext(filename)[1]
