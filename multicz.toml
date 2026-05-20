@@ -57,6 +57,18 @@ title = "Performance"
 types = ["perf"]
 
 [components.terragrunt-generator]
+# A commit is attributed to this component (for the bump and the
+# CHANGELOG) only if it touches one of these paths - the source and the
+# project/deps/metadata file. Everything else (LICENSE, README, .github,
+# docs, tests, scripts, tooling configs) is intentionally NOT tracked, so
+# infra/docs-only work never counts as a package release.
+#
+# Consequence to remember: a release-relevant change carried by a file
+# OUTSIDE this list is invisible to multicz. The v1.0.0 MIT relicense was
+# dropped from the changelog because its commit touched only
+# LICENSE/COPYING. So a relicense (or any metadata change that should
+# ship) MUST also edit pyproject.toml - e.g. the `license` field - to be
+# picked up.
 paths = ["src/**", "pyproject.toml"]
 bump_files = [
     { file = "pyproject.toml", key = "project.version" },
