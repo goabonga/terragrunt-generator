@@ -1,90 +1,134 @@
-# Contributing
+# Contributing to terragrunt-generator
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
-
-Please note we have a code of conduct, please follow it in all your interactions with the project.
-
-## Merge Request Process
-
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a
-   deployment.
-2. Update the README.md with details of changes, this includes new environment
-   variables, useful file locations and other parameters.
-3. You may merge the Merge Request in once you have the sign-off of two other developers, or if you
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+Thanks for taking the time to contribute. This document is the short version
+of how to propose a change and what the project expects in return.
 
 ## Code of Conduct
 
-### Our Pledge
+Participation in this project is governed by the
+[Code of Conduct](CODE_OF_CONDUCT.md). By contributing you agree to abide by
+its terms.
 
-In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, gender identity and expression, level of experience,
-nationality, personal appearance, race, religion, or sexual identity and
-orientation.
+## Development setup
 
-### Our Standards
+```bash
+# Clone and sync the project (Python 3.13+).
+git clone https://github.com/goabonga/terragrunt-generator.git
+cd terragrunt-generator
+uv sync
 
-Examples of behavior that contributes to creating a positive environment
-include:
+# Install the pre-commit and commit-msg hooks (runs ruff check/format,
+# mypy strict, SPDX header checks, and Conventional Commits validation
+# before each commit lands).
+uv run pre-commit install
+```
 
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
+To run all hooks manually on every tracked file:
 
-Examples of unacceptable behavior by participants include:
+```bash
+uv run pre-commit run --all-files
+```
 
-- The use of sexualized language or imagery and unwelcome sexual attention or
-  advances
-- Trolling, insulting/derogatory comments, and personal or political attacks
-- Public or private harassment
-- Publishing others' private information, such as a physical or electronic
-  address, without explicit permission
-- Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+## Running the tests
 
-### Our Responsibilities
+```bash
+# Full suite with coverage.
+uv run pytest --cov=terragrunt_generator
+```
 
-Project maintainers are responsible for clarifying the standards of acceptable
-behavior and are expected to take appropriate and fair corrective action in
-response to any instances of unacceptable behavior.
+## Lint and type checks
 
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful.
+```bash
+# Lint (ruff: E, F, I, B, UP, SIM).
+uv run ruff check src tests
 
-### Scope
+# Format check.
+uv run ruff format --check src tests
 
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
+# Strict static type checking (mypy on src/).
+uv run mypy src
+```
 
-### Enforcement
+All three checks run in CI and gate the release.
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [INSERT EMAIL ADDRESS]. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+## License headers
 
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
+Every Python, YAML and TOML file in the repository must start with the
+two-line SPDX header below (after the shebang, if any):
 
-### Attribution
+```
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+```
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
-available at [http://contributor-covenant.org/version/1/4][version]
+A helper script applies and verifies the headers:
 
-[homepage]: http://contributor-covenant.org
-[version]: http://contributor-covenant.org/version/1/4/
+```bash
+# Add missing headers in-place.
+python scripts/add_license_header.py --path . --types py,yml,toml
+
+# Fail with non-zero exit if any tracked file is missing the header.
+python scripts/add_license_header.py --path . --types py,yml,toml --check
+```
+
+Markdown, `LICENSE`, `uv.lock`, `.gitignore` and `py.typed` markers are
+intentionally excluded.
+
+## Branching and pull requests
+
+1. Fork the repository and create a topic branch from `main`.
+2. Keep commits small, focused and atomic.
+3. Open a pull request against `main`. The CI workflow runs the full
+   quality matrix (lint, type-check, tests, security scans).
+4. Reviews target correctness, scope and adherence to the
+   conventional-commits contract; please do not bundle unrelated changes.
+
+## Commit messages
+
+Commit messages MUST follow
+[Conventional Commits](https://www.conventionalcommits.org/). They drive the
+version bumps and changelog computed by
+[multicz](https://github.com/goabonga/multicz).
+
+| Type | Effect on version | Use it for |
+| --- | --- | --- |
+| `feat` | minor | new user-facing capability |
+| `fix` | patch | bug fix |
+| `perf` | patch | performance improvement |
+| `deprecate` | minor | announce an upcoming removal (raises a `DeprecationWarning`); routed to `### Deprecated` in `CHANGELOG.md` |
+| `remove` | minor | perform the removal after the n+2 window completes; routed to `### Removed` in `CHANGELOG.md` |
+| `refactor`, `docs`, `test`, `chore`, `ci`, `build`, `style` | none | maintenance, no release |
+| `feat!` / `BREAKING CHANGE:` | major | incompatible change bypassing the deprecation cycle (security, design errors that cannot wait) |
+
+Examples:
+
+```
+feat(cli): support multiple --yaml-output options
+fix(generate): preserve quoted defaults in inputs block
+docs: clarify the --lookup syntax
+```
+
+Do not append `Co-Authored-By` trailers; the workflow expects a single
+authored release commit per push.
+
+## Deprecations
+
+Any commit that deprecates or removes a public symbol MUST follow the
+[stability and deprecation policy](docs/stability.md):
+announce with a `DeprecationWarning` in version `n + 1`, remove in
+`n + 2`. Removal commits are regular `feat:` (no `!`) - under the n+2
+contract, a removal after the warning window is not a breaking change
+and lands in a minor release. Reserve `feat!:` / `BREAKING CHANGE:`
+for changes that bypass the deprecation cycle.
+
+## Releasing
+
+Releases are fully automated. On every push to `main`, the workflow runs
+`multicz bump --commit --tag --push` and then publishes the bumped package
+to PyPI. Maintainers do not need to bump versions, edit changelogs or create
+tags by hand.
+
+## Reporting bugs and asking for features
+
+Please open a GitHub issue. For security-sensitive reports, follow
+[SECURITY.md](SECURITY.md) instead of the public tracker.
