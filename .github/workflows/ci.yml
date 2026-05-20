@@ -173,15 +173,61 @@ jobs:
       - name: Install multicz
         run: uv tool install multicz
       - name: Configure git author
+        # Attribute the release commit to whoever pushed the head commit
+        # that triggered CI, falling back to the github-actions[bot]
+        # noreply identity when the payload carries no author.
         run: |
           NAME="${{ github.event.head_commit.author.name }}"
           EMAIL="${{ github.event.head_commit.author.email }}"
           git config user.name  "${NAME:-github-actions[bot]}"
           git config user.email "${EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
+      - name: Detect GPG availability
+        # Secrets can't be referenced from `if:` directly, so promote
+        # their presence to a step output.
+        id: gpg
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          if [ -n "$GPG_PRIVATE_KEY" ] && [ -n "$GPG_PASSPHRASE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Import and unlock GPG key
+        if: steps.gpg.outputs.available == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Pre-cache the passphrase in gpg-agent via a dummy sign so
+          # subsequent `git commit -S` / `git tag -s` don't prompt.
+          echo test | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" \
+            --pinentry-mode loopback --sign > /dev/null
+          # Derive the signing key id from the imported key; no extra
+          # secret needed.
+          KEY_ID=$(gpg --list-secret-keys --with-colons \
+            | awk -F: '/^sec/{print $5; exit}')
+          git config user.signingkey "$KEY_ID"
       - name: Plan release
         run: uv tool run multicz plan --summary "$GITHUB_STEP_SUMMARY"
+      - name: Bump, commit, tag, push (signed)
+        id: bump_signed
+        if: steps.gpg.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          PLAN=$(uv tool run multicz bump --commit --tag --push --sign --output json)
+          BUMPED=$(echo "$PLAN" | jq -r '.bumps | keys | join(" ")')
+          if [ -z "$BUMPED" ]; then
+            echo "no_bumps=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_bumps=false" >> "$GITHUB_OUTPUT"
+            echo "version=$(uv tool run multicz get terragrunt-generator)" >> "$GITHUB_OUTPUT"
+          fi
       - name: Bump, commit, tag, push
-        id: bump
+        id: bump_unsigned
+        if: steps.gpg.outputs.available != 'true'
         run: |
           set -euo pipefail
           PLAN=$(uv tool run multicz bump --commit --tag --push --output json)
@@ -191,6 +237,16 @@ jobs:
           else
             echo "no_bumps=false" >> "$GITHUB_OUTPUT"
             echo "version=$(uv tool run multicz get terragrunt-generator)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Resolve release outputs
+        id: bump
+        run: |
+          if [ "${{ steps.gpg.outputs.available }}" = "true" ]; then
+            echo 'no_bumps=${{ steps.bump_signed.outputs.no_bumps }}' >> "$GITHUB_OUTPUT"
+            echo 'version=${{ steps.bump_signed.outputs.version }}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'no_bumps=${{ steps.bump_unsigned.outputs.no_bumps }}' >> "$GITHUB_OUTPUT"
+            echo 'version=${{ steps.bump_unsigned.outputs.version }}' >> "$GITHUB_OUTPUT"
           fi
 
   # Build and publish to PyPI, then create the GitHub Release. Trusted
