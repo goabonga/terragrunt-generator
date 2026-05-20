@@ -1,0 +1,112 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: dependabot-rewrite
+
+# `pull_request_target` is required so the workflow has access to
+# `GPG_PRIVATE_KEY` / `GPG_PASSPHRASE` (regular `pull_request` runs
+# without secrets on bot-triggered events). The workflow body is loaded
+# from `main`, not from the PR branch, so we are not executing
+# untrusted PR-modified workflow code.
+#
+# The `if: github.actor == 'dependabot[bot]'` gate ensures the rewrite
+# only fires for genuine Dependabot PRs.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write       # force-push the rewritten branch
+  pull-requests: write  # update the PR
+
+jobs:
+  rewrite:
+    name: rewrite dependabot commits
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: dependabot-rewrite-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Check GPG availability
+        # Secrets can't be used inside `if:` directly, so we promote
+        # their presence to a step output and gate the rest on it.
+        id: gate
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          if [ -z "$GPG_PRIVATE_KEY" ] || [ -z "$GPG_PASSPHRASE" ]; then
+            {
+              echo "## Dependabot rewrite: skipped"
+              echo ""
+              echo "GPG_PRIVATE_KEY and/or GPG_PASSPHRASE are not configured. "
+              echo "The Dependabot PR ships with bot-authored, web-signed commits."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::GPG secrets unset; leaving Dependabot commits as-is"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout PR head branch
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure GPG and git identity from the imported key
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Pre-cache the passphrase so subsequent --amend signs without
+          # an interactive prompt.
+          echo test | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" \
+            --pinentry-mode loopback --sign > /dev/null
+          KEY_ID=$(gpg --list-secret-keys --with-colons \
+            | awk -F: '/^sec/{print $5; exit}')
+          # Pull the maintainer's name + email from the key UID so the
+          # rewritten commits look identical to a manual local commit.
+          UID_LINE=$(gpg --list-keys --with-colons "$KEY_ID" \
+            | awk -F: '/^uid/{print $10; exit}')
+          NAME="${UID_LINE%% <*}"
+          EMAIL=$(printf '%s' "$UID_LINE" | sed -nE 's/.*<([^>]+)>.*/\1/p')
+          git config user.name  "$NAME"
+          git config user.email "$EMAIL"
+          git config user.signingkey "$KEY_ID"
+          git config commit.gpgsign true
+
+      - name: Rewrite commits with scope-aware messages
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          BASE_SHA=$(git merge-base \
+            "origin/${{ github.event.pull_request.base.ref }}" HEAD)
+          # Rebase replays each commit; the --exec script runs against
+          # the new HEAD after every pick, reclassifying scope by file
+          # changes and amending with --reset-author and a GPG signature.
+          git rebase "$BASE_SHA" \
+            --exec "scripts/rewrite-dependabot-commit.sh"
+
+      - name: Force-push rewritten branch
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          git push --force-with-lease \
+            origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+      - name: Write step summary
+        if: steps.gate.outputs.skip != 'true' && success()
+        run: |
+          {
+            echo "## Dependabot rewrite: applied"
+            echo ""
+            echo "PR branch \`${{ github.event.pull_request.head.ref }}\` rewritten:"
+            echo ""
+            echo "- Conventional-commits scope inferred from changed files"
+            echo "- Authored and GPG-signed as \`$(git config user.name) <$(git config user.email)>\`"
+          } >> "$GITHUB_STEP_SUMMARY"
