@@ -28,7 +28,7 @@ dependencies = [
     # (quoted string values, __is_block__ markers) in a way the
     # generator does not yet handle. Bumping the major is a follow-up
     # feature, not part of this modernization.
-    "python-hcl2>=4.3,<5",
+    "python-hcl2>=4.3,<9",
     "GitPython>=3.1",
 ]
 
