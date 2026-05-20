@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# `concurrency` cancels superseded PR runs but never main-branch releases.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Lint with ruff: `ruff check` (E, F, I, B, UP, SIM) plus a separate
+  # `ruff format --check` so whitespace/quote-style violations are caught
+  # for contributors who skipped the pre-commit hooks.
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Sync
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check --output-format=github src tests
+      - name: Format check
+        run: uv run ruff format --check src tests
+
+  # Strict static type checking with mypy on the public src/.
+  type-check:
+    name: type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Sync
+        run: uv sync --frozen
+      - name: Type-check
+        run: uv run mypy src
+
+  # Verify the two-line SPDX header on every Python source and config.
+  license-headers:
+    name: license-headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Check SPDX headers
+        run: |
+          uv run python scripts/add_license_header.py --path src --types py --check
+          uv run python scripts/add_license_header.py --path tests --types py --check
+          uv run python scripts/add_license_header.py --path scripts --types py --check
+          uv run python scripts/add_license_header.py --path .github --types yml --check
+          uv run python scripts/add_license_header.py --path . --types toml --check
+
+  # Run the test suite with coverage and report to Codecov.
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Sync
+        run: uv sync --frozen
+      - name: Run tests with coverage
+        run: |
+          uv run pytest \
+            --cov=terragrunt_generator \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --junitxml=junit.xml \
+            -o junit_family=legacy
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          disable_search: true
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Static security analysis of the source (Bandit).
+  bandit:
+    name: bandit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Run Bandit
+        run: uvx bandit --recursive src
+
+  # Audit the locked dependency graph against the PyPI advisory DB.
+  pip-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Sync
+        run: uv sync --frozen
+      - name: Run pip-audit
+        run: uvx pip-audit --skip-editable --path .venv
+
+  # Multi-source vulnerability scan via OSV-Scanner (reads uv.lock).
+  osv-scanner:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install OSV-Scanner
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL \
+            "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64" \
+            -o "$HOME/.local/bin/osv-scanner"
+          chmod +x "$HOME/.local/bin/osv-scanner"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Run OSV-Scanner
+        run: osv-scanner scan source --lockfile=uv.lock
+
+  # Release on main only: bump the version, write the changelog, create
+  # the release commit + tag and push them back. Gated on every quality
+  # job; `needs` blocks on any upstream failure.
+  release:
+    name: release
+    needs:
+      - lint
+      - type-check
+      - license-headers
+      - test
+      - bandit
+      - pip-audit
+      - osv-scanner
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      no_bumps: ${{ steps.bump.outputs.no_bumps }}
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install multicz
+        run: uv tool install multicz
+      - name: Configure git author
+        run: |
+          NAME="${{ github.event.head_commit.author.name }}"
+          EMAIL="${{ github.event.head_commit.author.email }}"
+          git config user.name  "${NAME:-github-actions[bot]}"
+          git config user.email "${EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
+      - name: Plan release
+        run: uv tool run multicz plan --summary "$GITHUB_STEP_SUMMARY"
+      - name: Bump, commit, tag, push
+        id: bump
+        run: |
+          set -euo pipefail
+          PLAN=$(uv tool run multicz bump --commit --tag --push --output json)
+          BUMPED=$(echo "$PLAN" | jq -r '.bumps | keys | join(" ")')
+          if [ -z "$BUMPED" ]; then
+            echo "no_bumps=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_bumps=false" >> "$GITHUB_OUTPUT"
+            echo "version=$(uv tool run multicz get terragrunt-generator)" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Build and publish to PyPI, then create the GitHub Release. Trusted
+  # Publishing (OIDC) via the `pypi` environment, with a token fallback.
+  pypi-publish:
+    name: pypi-publish
+    needs: [release]
+    if: >-
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && needs.release.result == 'success'
+      && needs.release.outputs.no_bumps == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/terragrunt-generator/
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install multicz
+        run: uv tool install multicz
+      - name: Build wheel and sdist
+        run: |
+          set -euo pipefail
+          uv build --out-dir dist
+          ls -l dist
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.release.outputs.version }}"
+          tag="v${version}"
+          notes=$(uv tool run multicz release-notes --tag "$tag")
+          gh release create "$tag" --title "$tag" --notes "$notes" dist/*
+
+  # Build the Zensical site and deploy it to GitHub Pages on every
+  # successful release bump.
+  docs:
+    name: docs
+    needs: [release]
+    if: >-
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && needs.release.result == 'success'
+      && needs.release.outputs.no_bumps == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install Zensical (doc group)
+        run: uv sync --frozen --only-group doc
+      - name: Build site
+        run: uv run zensical build --clean
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5
