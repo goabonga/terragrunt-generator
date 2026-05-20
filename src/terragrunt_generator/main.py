@@ -19,80 +19,80 @@ from terragrunt_generator.yaml import merge_yaml_strings
 
 parser = argparse.ArgumentParser(
     prog=__prog__,
-    description='Generate a terragrunt.hcl configuration file from a Terraform module.',
+    description="Generate a terragrunt.hcl configuration file from a Terraform module.",
 )
 
 parser.add_argument(
-    '-V',
-    action='version',
-    version=f'%(prog)s {__version__}',
+    "-V",
+    action="version",
+    version=f"%(prog)s {__version__}",
 )
 
 parser.add_argument(
-    '-u',
-    '--url',
+    "-u",
+    "--url",
     required=True,
-    help='URL or local path to the Terraform module (can be a git repo or directory).',
+    help="URL or local path to the Terraform module (can be a git repo or directory).",
 )
 
 parser.add_argument(
-    '-v',
-    '--version',
-    help='Branch, tag, or commit hash to checkout if the module is from a git repository (default: main).',
-    default='main',
+    "-v",
+    "--version",
+    help="Branch, tag, or commit hash to checkout if the module is from a git repository (default: main).",
+    default="main",
 )
 
 parser.add_argument(
-    '-p',
-    '--path',
-    help='Relative path to the module inside the repository or directory (if needed).',
+    "-p",
+    "--path",
+    help="Relative path to the module inside the repository or directory (if needed).",
 )
 
 parser.add_argument(
-    '--include',
+    "--include",
     help='Whether to include the "include" block in the generated terragrunt.hcl (default: true).',
     action=argparse.BooleanOptionalAction,
     default=True,
 )
 
 parser.add_argument(
-    '-l',
-    '--lookup',
+    "-l",
+    "--lookup",
     required=True,
-    help='Path used for variable lookup in the generated Terragrunt configuration.',
+    help="Path used for variable lookup in the generated Terragrunt configuration.",
 )
 
 parser.add_argument(
-    '-o',
-    '--output',
-    help='File path to write the generated terragrunt.hcl (default: print to stdout).',
+    "-o",
+    "--output",
+    help="File path to write the generated terragrunt.hcl (default: print to stdout).",
     default=None,
 )
 
 parser.add_argument(
-    '--yaml-output',
-    help='Directories to write the generated YAML config file (can be specified multiple times).',
-    action='append',
+    "--yaml-output",
+    help="Directories to write the generated YAML config file (can be specified multiple times).",
+    action="append",
     default=[],
 )
 
 parser.add_argument(
-    '--yaml-for-env',
-    help='Environment names used to generate YAML files (e.g., dev, prod).',
-    action='append',
+    "--yaml-for-env",
+    help="Environment names used to generate YAML files (e.g., dev, prod).",
+    action="append",
     default=[],
 )
 
 parser.add_argument(
-    '--enabled',
-    help='Whether to mark the module as enabled in the YAML configuration (default: true).',
+    "--enabled",
+    help="Whether to mark the module as enabled in the YAML configuration (default: true).",
     action=argparse.BooleanOptionalAction,
     default=True,
 )
 
 
 def create_working_directory() -> str:
-    tempdir = f'{gettempdir()}/{uuid4()}'
+    tempdir = f"{gettempdir()}/{uuid4()}"
     return tempdir
 
 
@@ -105,8 +105,8 @@ def copy_terraform_module(url: str, version: str, path: str) -> None:
 
 def write_hcl_file(args: argparse.Namespace, output: str) -> None:
 
-    if args.output.endswith('/') or not os.path.splitext(args.output)[1]:
-        output_path = os.path.join(args.output, 'terragrunt.hcl')
+    if args.output.endswith("/") or not os.path.splitext(args.output)[1]:
+        output_path = os.path.join(args.output, "terragrunt.hcl")
     else:
         output_path = args.output
 
@@ -114,7 +114,7 @@ def write_hcl_file(args: argparse.Namespace, output: str) -> None:
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         f.write(output)
 
     print(f"terragrunt.hcl written to: {output_path}")
@@ -160,7 +160,7 @@ def main(argv: list[str] | None = None) -> None:
         envs = args.yaml_for_env if args.yaml_for_env else [None]
 
         for env in envs:
-            if yaml_output_path.is_dir() or str(yaml_output_path).endswith('/'):
+            if yaml_output_path.is_dir() or str(yaml_output_path).endswith("/"):
                 config_filename = f"config.{env}.yaml" if env else "config.yaml"
                 final_path = yaml_output_path / config_filename
             else:
@@ -173,13 +173,13 @@ def main(argv: list[str] | None = None) -> None:
             final_path.parent.mkdir(parents=True, exist_ok=True)
 
             if final_path.exists():
-                with final_path.open('r') as f:
+                with final_path.open("r") as f:
                     existing_yaml = f.read()
                 final_yaml = merge_yaml_strings(existing_yaml, yanl)
             else:
                 final_yaml = yanl
 
-            with final_path.open('w') as f:
+            with final_path.open("w") as f:
                 f.write(final_yaml)
 
             print(f"YAML config written to: {final_path}")

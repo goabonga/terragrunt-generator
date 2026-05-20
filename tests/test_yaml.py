@@ -10,28 +10,28 @@ from terragrunt_generator.yaml import format_description, get_yaml, merge_yaml_s
     "description, indent, expected",
     [
         (
-            'This is a description.',
-            '    ',
-            'This is a description.',
+            "This is a description.",
+            "    ",
+            "This is a description.",
         ),
         (
-            'This is a description.\nWith a second line.',
-            '    ',
-            'This is a description.\n    # With a second line.',
+            "This is a description.\nWith a second line.",
+            "    ",
+            "This is a description.\n    # With a second line.",
         ),
         (
-            'First line.\nSecond line.\nThird line.',
-            '  ',
-            'First line.\n  # Second line.\n  # Third line.',
+            "First line.\nSecond line.\nThird line.",
+            "  ",
+            "First line.\n  # Second line.\n  # Third line.",
         ),
         (
-            '',
-            '    ',
-            '',
+            "",
+            "    ",
+            "",
         ),
         (
             'Line with \\"escaped\\" quotes.',
-            '    ',
+            "    ",
             'Line with "escaped" quotes.',
         ),
     ],
@@ -41,17 +41,17 @@ def test_format_description(description, indent, expected):
 
 
 def test_get_yaml():
-    name: str = 'test'
+    name: str = "test"
     variables: dict = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [
             {
-                'name': 'optionals',
-                'description': 'optionals',
-                'default': 'optional_value',
+                "name": "optionals",
+                "description": "optionals",
+                "default": "optional_value",
             }
         ],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     resutls = get_yaml(name, variables)
     print(resutls)
@@ -94,7 +94,7 @@ def test_merge_yaml_strings():
 
     assert "cluster:" in result
     assert "helper:" in result
-    assert "optional: \"optional\"" in result
+    assert 'optional: "optional"' in result
 
 
 def test_merge_yaml_strings_with_blank_lines_inside_blocks():
@@ -121,7 +121,7 @@ def test_merge_yaml_strings_with_blank_lines_inside_blocks():
 
     assert "enabled: true\n\n    # required - required value" in result
     assert "helper:" in result
-    assert "another: \"value\"" in result
+    assert 'another: "value"' in result
 
 
 def test_merge_yaml_strings_with_other_keys():

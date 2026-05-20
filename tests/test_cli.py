@@ -17,25 +17,25 @@ variable "test" {
 """
 
 
-@pytest.mark.parametrize('option', ('-h', '--help'))
+@pytest.mark.parametrize("option", ("-h", "--help"))
 def test_help(capsys, option):
     with contextlib.suppress(SystemExit):
         main([option])
     output = capsys.readouterr().out
     assert (
-        'Generate a terragrunt.hcl configuration file from a Terraform module.'
+        "Generate a terragrunt.hcl configuration file from a Terraform module."
         in output
     )
 
 
 def test_main_local(capsys):
     args = [
-        '-u',
-        './examples/modules/',
-        '-v',
-        '0.0.1',
-        '-l',
-        'test',
+        "-u",
+        "./examples/modules/",
+        "-v",
+        "0.0.1",
+        "-l",
+        "test",
     ]
     main(args)
 
@@ -87,17 +87,17 @@ inputs = merge({
     assert results == expected
 
 
-@patch('terragrunt_generator.git.Repo.clone_from')
-@patch('os.listdir', return_value=['test.tf'])
-@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch("terragrunt_generator.git.Repo.clone_from")
+@patch("os.listdir", return_value=["test.tf"])
+@patch("builtins.open", new_callable=mock_open, read_data=data)
 def test_main_repo(mock_git, mock_dir, mock_file, capsys):
     args = [
-        '-u',
-        'https://gitserver.com/test/test.git',
-        '-v',
-        '0.0.1',
-        '-l',
-        'test',
+        "-u",
+        "https://gitserver.com/test/test.git",
+        "-v",
+        "0.0.1",
+        "-l",
+        "test",
     ]
     main(args)
 
@@ -140,38 +140,38 @@ inputs = {
     assert results == expected
 
 
-@patch('terragrunt_generator.git.Repo.clone_from')
-@patch('os.listdir', return_value=['test.tf'])
-@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch("terragrunt_generator.git.Repo.clone_from")
+@patch("os.listdir", return_value=["test.tf"])
+@patch("builtins.open", new_callable=mock_open, read_data=data)
 @patch(
-    'terragrunt_generator.main.copy_terraform_module',
-    side_effect=Exception(b'Test exception message'),
+    "terragrunt_generator.main.copy_terraform_module",
+    side_effect=Exception(b"Test exception message"),
 )
-@patch('sys.exit')
+@patch("sys.exit")
 def test_main_repo_exception(
     mock_exit, mock_copy_module, mock_git, mock_dir, mock_file, capsys
 ):
     args = [
-        '-u',
-        'https://gitserver.com/test/test.git',
-        '-v',
-        '0.0.1',
-        '-l',
-        'test',
+        "-u",
+        "https://gitserver.com/test/test.git",
+        "-v",
+        "0.0.1",
+        "-l",
+        "test",
     ]
 
     main(args)
 
     results = capsys.readouterr().out
 
-    assert 'Test exception message' in results
+    assert "Test exception message" in results
     mock_exit.assert_called_once_with(1)
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('builtins.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("builtins.open", new_callable=mock_open)
 def test_main_local_with_output(
     mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
 ):
@@ -179,86 +179,89 @@ def test_main_local_with_output(
     os.makedirs(fake_tempdir.as_posix(), exist_ok=True)
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'required': {
-                    'description': 'required value',
-                    'type': 'string',
+                "required": {
+                    "description": "required value",
+                    "type": "string",
                 },
-                'optional': {
-                    'description': 'optional value',
-                    'type': 'string',
-                    'default': 'optional',
+                "optional": {
+                    "description": "optional value",
+                    "type": "string",
+                    "default": "optional",
                 },
-                'nullable': {
-                    'description': 'nullable value',
-                    'type': 'string',
-                    'default': None,
+                "nullable": {
+                    "description": "nullable value",
+                    "type": "string",
+                    "default": None,
                 },
             }
         ]
     }
 
     with patch(
-        'terragrunt_generator.main.create_working_directory', return_value=fake_tempdir.as_posix()
+        "terragrunt_generator.main.create_working_directory",
+        return_value=fake_tempdir.as_posix(),
     ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'test',
-            '-o',
-            './output/',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "test",
+            "-o",
+            "./output/",
         ]
         main(args)
 
     results = capsys.readouterr().out
-    assert 'terragrunt.hcl written to: ./output/terragrunt.hcl' in results
-    mock_open_write.assert_any_call('./output/terragrunt.hcl', 'w')
+    assert "terragrunt.hcl written to: ./output/terragrunt.hcl" in results
+    mock_open_write.assert_any_call("./output/terragrunt.hcl", "w")
     handle = mock_open_write()
     handle.write.assert_called()
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('builtins.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("builtins.open", new_callable=mock_open)
 def test_output_explicit_file_path(
     mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
 ):
     output_file = tmp_path / "terragrunt-custom.hcl"
 
     mock_read_dir.return_value = {
-        'variable': [
-            {'test': {'description': '', 'type': 'string', 'default': 'value'}}
+        "variable": [
+            {"test": {"description": "", "type": "string", "default": "value"}}
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'test',
-            '-o',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "test",
+            "-o",
             str(output_file),
         ]
         main(args)
 
-    mock_open_write.assert_any_call(str(output_file), 'w')
+    mock_open_write.assert_any_call(str(output_file), "w")
     handle = mock_open_write()
     handle.write.assert_called()
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('os.path.isdir', return_value=True)
-@patch('builtins.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("os.path.isdir", return_value=True)
+@patch("builtins.open", new_callable=mock_open)
 def test_output_directory_without_slash(
     mock_open_write,
     mock_isdir,
@@ -272,36 +275,38 @@ def test_output_directory_without_slash(
     os.makedirs(output_dir)
 
     mock_read_dir.return_value = {
-        'variable': [
-            {'test': {'description': '', 'type': 'string', 'default': 'value'}}
+        "variable": [
+            {"test": {"description": "", "type": "string", "default": "value"}}
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'test',
-            '-o',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "test",
+            "-o",
             str(output_dir),
         ]
         main(args)
 
-    expected_path = os.path.join(str(output_dir), 'terragrunt.hcl')
-    mock_open_write.assert_any_call(expected_path, 'w')
+    expected_path = os.path.join(str(output_dir), "terragrunt.hcl")
+    mock_open_write.assert_any_call(expected_path, "w")
     handle = mock_open_write()
     handle.write.assert_called()
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('os.path.exists', return_value=True)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("os.path.exists", return_value=True)
 @patch(
-    'pathlib.Path.open',
+    "pathlib.Path.open",
     new_callable=mock_open,
     read_data="gke:\n  helper:\n    enabled: true\n",
 )
@@ -319,32 +324,34 @@ def test_yaml_output_merge_if_exists(
     yaml_output_file = yaml_output_dir / yaml_filename
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'helper': {
-                    'description': 'helper description',
-                    'type': 'string',
-                    'default': 'default_value',
+                "helper": {
+                    "description": "helper description",
+                    "type": "string",
+                    "default": "default_value",
                 },
-                'mandatory_var': {
-                    'description': 'mandatory description',
-                    'type': 'string',
+                "mandatory_var": {
+                    "description": "mandatory description",
+                    "type": "string",
                 },
             }
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'gke.helper',
-            '--yaml-for-env',
-            'test',
-            '--yaml-output',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "gke.helper",
+            "--yaml-for-env",
+            "test",
+            "--yaml-output",
             str(yaml_output_dir),
         ]
         main(args)
@@ -355,14 +362,14 @@ def test_yaml_output_merge_if_exists(
 
     open_calls = mock_open_read.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
-    assert 'r' in modes or 'w' in modes
+    assert "r" in modes or "w" in modes
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('os.path.exists', return_value=False)
-@patch('pathlib.Path.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("os.path.exists", return_value=False)
+@patch("pathlib.Path.open", new_callable=mock_open)
 def test_yaml_output_new_file_creation(
     mock_open_write,
     mock_exists,
@@ -377,28 +384,30 @@ def test_yaml_output_new_file_creation(
     yaml_output_file = yaml_output_dir / yaml_filename
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'test': {
-                    'description': 'desc',
-                    'type': 'string',
-                    'default': 'default_val',
+                "test": {
+                    "description": "desc",
+                    "type": "string",
+                    "default": "default_val",
                 }
             }
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'gke',
-            '--yaml-for-env',
-            'dev',
-            '--yaml-output',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "gke",
+            "--yaml-for-env",
+            "dev",
+            "--yaml-output",
             str(yaml_output_dir),
         ]
         main(args)
@@ -409,14 +418,14 @@ def test_yaml_output_new_file_creation(
 
     open_calls = mock_open_write.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
-    assert 'w' in modes
+    assert "w" in modes
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('os.path.exists', return_value=False)
-@patch('pathlib.Path.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("os.path.exists", return_value=False)
+@patch("pathlib.Path.open", new_callable=mock_open)
 def test_yaml_output_direct_file_without_env(
     mock_open_write,
     mock_exists,
@@ -429,26 +438,28 @@ def test_yaml_output_direct_file_without_env(
     yaml_output_file = tmp_path / "config.cluster.yaml"
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'cluster': {
-                    'description': 'desc',
-                    'type': 'string',
-                    'default': 'default_val',
+                "cluster": {
+                    "description": "desc",
+                    "type": "string",
+                    "default": "default_val",
                 }
             }
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'cluster',
-            '--yaml-output',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "cluster",
+            "--yaml-output",
             str(yaml_output_file),
         ]
         main(args)
@@ -459,14 +470,14 @@ def test_yaml_output_direct_file_without_env(
 
     open_calls = mock_open_write.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
-    assert 'w' in modes
+    assert "w" in modes
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('os.path.exists', return_value=False)
-@patch('pathlib.Path.open', new_callable=mock_open)
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("os.path.exists", return_value=False)
+@patch("pathlib.Path.open", new_callable=mock_open)
 def test_yaml_output_file_with_env_creates_in_parent(
     mock_open_write,
     mock_exists,
@@ -479,29 +490,31 @@ def test_yaml_output_file_with_env_creates_in_parent(
     yaml_output_file = tmp_path / "something.output.yaml"
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'testvar': {
-                    'description': 'test var',
-                    'type': 'string',
-                    'default': 'testvalue',
+                "testvar": {
+                    "description": "test var",
+                    "type": "string",
+                    "default": "testvalue",
                 }
             }
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'testvar',
-            '--yaml-output',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "testvar",
+            "--yaml-output",
             str(yaml_output_file),
-            '--yaml-for-env',
-            'dev',
+            "--yaml-for-env",
+            "dev",
         ]
         main(args)
 
@@ -513,15 +526,15 @@ def test_yaml_output_file_with_env_creates_in_parent(
 
     open_calls = mock_open_write.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
-    assert 'w' in modes
+    assert "w" in modes
 
 
-@patch('terragrunt_generator.main.copy_terraform_module')
-@patch('terragrunt_generator.main.read_directory')
-@patch('os.makedirs')
-@patch('pathlib.Path.exists', return_value=True)  # <<< forcer exists() == True
+@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.read_directory")
+@patch("os.makedirs")
+@patch("pathlib.Path.exists", return_value=True)  # <<< forcer exists() == True
 @patch(
-    'pathlib.Path.open',
+    "pathlib.Path.open",
     new_callable=mock_open,
     read_data="test:\n  existing_key: existing_value\n",
 )
@@ -538,28 +551,30 @@ def test_yaml_output_merge_existing_file(
     yaml_output_file = yaml_output_dir / "config.dev.yaml"
 
     mock_read_dir.return_value = {
-        'variable': [
+        "variable": [
             {
-                'test': {
-                    'description': 'new test description',
-                    'type': 'string',
-                    'default': 'new_default_value',
+                "test": {
+                    "description": "new test description",
+                    "type": "string",
+                    "default": "new_default_value",
                 }
             }
         ]
     }
 
-    with patch('terragrunt_generator.main.create_working_directory', return_value=str(tmp_path)):
+    with patch(
+        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+    ):
         args = [
-            '-u',
-            './examples/modules/',
-            '-v',
-            '0.0.1',
-            '-l',
-            'test',
-            '--yaml-for-env',
-            'dev',
-            '--yaml-output',
+            "-u",
+            "./examples/modules/",
+            "-v",
+            "0.0.1",
+            "-l",
+            "test",
+            "--yaml-for-env",
+            "dev",
+            "--yaml-output",
             str(yaml_output_dir),
         ]
         main(args)
@@ -570,4 +585,4 @@ def test_yaml_output_merge_existing_file(
 
     open_calls = mock_open_read.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
-    assert 'r' in modes or 'w' in modes
+    assert "r" in modes or "w" in modes

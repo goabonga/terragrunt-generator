@@ -18,18 +18,18 @@ def generate_header(
     enabled: bool = True,
 ) -> tuple[str, str]:
     if variables is None:
-        variables = {'mandatories': {}, 'optionals': {}, 'nullables': {}}
-    lookup = lookup.replace('local.all', '')
-    path = path or ''
-    if 'http' in url:
+        variables = {"mandatories": {}, "optionals": {}, "nullables": {}}
+    lookup = lookup.replace("local.all", "")
+    path = path or ""
+    if "http" in url:
         url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
-    lookup_parts = lookup.split('.')
+    lookup_parts = lookup.split(".")
     lookup_prefix = lookup_parts[:-1][0] if len(lookup_parts) > 1 else lookup
 
     yaml_raw = get_yaml(lookup, variables, enabled)
-    yaml_comment = yaml_raw.replace(f'{lookup_prefix}:', f'# {lookup_prefix}:').replace(
-        '\n  ', '\n#   '
+    yaml_comment = yaml_raw.replace(f"{lookup_prefix}:", f"# {lookup_prefix}:").replace(
+        "\n  ", "\n#   "
     )
 
     header = f"""# {name} {version}
@@ -44,15 +44,15 @@ def generate_header(
 
 
 def generate_include(enable: bool = True) -> str:
-    content: str = ''
+    content: str = ""
     if enable is True:
-        content = '    path = find_in_parent_folders()'
+        content = "    path = find_in_parent_folders()"
         return f"""
 include {{
 {content}
 }}
 """
-    return ''
+    return ""
 
 
 def generate_locals(
@@ -68,12 +68,14 @@ def generate_locals(
         else f'"{config_filename}"'
     )
 
-    env_line = f'environment = get_env("ENV", "{yaml_env}")\n    ' if yaml_env else ''
+    env_line = f'environment = get_env("ENV", "{yaml_env}")\n    ' if yaml_env else ""
 
     return f"""
 locals {{
     {env_line}source = {
-        f'"{url.replace("https://", "").replace("http://", "")}{f"//{path}" if path is not None else ""}?ref={version}"' if "http" in url else f'find_in_parent_folders("{url}")'
+        f'"{url.replace("https://", "").replace("http://", "")}{f"//{path}" if path is not None else ""}?ref={version}"'
+        if "http" in url
+        else f'find_in_parent_folders("{url}")'
     }
     all = merge(
         yamldecode(file(find_in_parent_folders({config_line}))),
@@ -82,10 +84,8 @@ locals {{
 """
 
 
-def generate_terraform(
-    url: str, path: str | None, version: str, lookup: str
-) -> str:
-    lookups = lookup.split('.')
+def generate_terraform(url: str, path: str | None, version: str, lookup: str) -> str:
+    lookups = lookup.split(".")
     previous = "local.all"
     source = ""
     for lookups_item in lookups:
@@ -93,8 +93,8 @@ def generate_terraform(
         previous = f"{previous}.{lookups_item}"
     source += f'lookup({previous}, "enabled", false) == false ? null : local.source'
 
-    path = f'//{path}' if path is not None else ''
-    url = f'{url.replace("https://", "").replace("http://", "")}{path}?ref={version}'
+    path = f"//{path}" if path is not None else ""
+    url = f"{url.replace('https://', '').replace('http://', '')}{path}?ref={version}"
 
     return f"""
 terraform {{
@@ -104,50 +104,50 @@ terraform {{
 
 
 def generate_inputs(
-    variables: list[dict[str, Any]] | None = None, lookup: str = 'local.all'
+    variables: list[dict[str, Any]] | None = None, lookup: str = "local.all"
 ) -> str:
-    content_fisrt: str = ''
-    content_next: str = ''
-    content_nullable: str = ''
-    variables = sorted(variables or [], key=lambda d: d['name'], reverse=False)
+    content_fisrt: str = ""
+    content_next: str = ""
+    content_nullable: str = ""
+    variables = sorted(variables or [], key=lambda d: d["name"], reverse=False)
     for variable in variables:
         description = (
-            variable.get('description', '')
-            .replace('    ', '')
-            .replace('\n', '\n    # ')
+            variable.get("description", "")
+            .replace("    ", "")
+            .replace("\n", "\n    # ")
             .replace('\\"', '"')
         )
-        if variable.get('nullable', False) is False:
-            _content: str = ''
+        if variable.get("nullable", False) is False:
+            _content: str = ""
             line_doc: str = f"{variable.get('name')} - {description}"
-            mandatory = variable.get('mandatory', False)
-            line_doc += ' - required' if mandatory is True else ''
+            mandatory = variable.get("mandatory", False)
+            line_doc += " - required" if mandatory is True else ""
             line_content: str = f"{variable.get('name')} = "
-            name = variable.get('name')
+            name = variable.get("name")
             line_content += f'lookup(local.all.{lookup}, "{name}"'
-            value: str = ''
-            if variable.get('type', None) == 'string':
+            value: str = ""
+            if variable.get("type", None) == "string":
                 value = f', "{variable.get("default", "")}"'
             else:
-                value = f', {json.dumps(variable.get("default"))}'
+                value = f", {json.dumps(variable.get('default'))}"
             line_content += value
-            line_content += ')'
+            line_content += ")"
             _content = f"""    # {line_doc}
     {line_content}
 """
-            if variable.get('mandatory', False) is True:
+            if variable.get("mandatory", False) is True:
                 content_fisrt += _content
             else:
                 content_next += _content
         else:
-            name = variable.get('name')
-            content_nullable += f'\n  # {name} - {description}'
+            name = variable.get("name")
+            content_nullable += f"\n  # {name} - {description}"
             content_nullable += f'\n  (lookup(local.all.{lookup}, "{name}", null)'
-            content_nullable += ' == null ? {} : '
+            content_nullable += " == null ? {} : "
             content_nullable += f'{{ {name} =  lookup(local.all.{lookup}, "{name}") }}'
-            content_nullable += '),'
+            content_nullable += "),"
 
-    if content_nullable != '':
+    if content_nullable != "":
         return f"""
 inputs = merge({{
 {content_fisrt}{content_next.rstrip(content_next[-1])}
@@ -170,29 +170,29 @@ def parse_variables(
     for variable in variables:
         for k in variable:
             v: dict[str, Any] = variable[k].copy()
-            if v.get('type') is not None:
-                v['type'] = v['type'].replace('${', '').replace('}', '')
-            if 'default' not in list(v.keys()):
-                v['mandatory'] = True
-                v['nullable'] = False
-            elif 'default' in list(v.keys()) and v.get('default', '') is None:
-                v['mandatory'] = False
-                v['nullable'] = True
+            if v.get("type") is not None:
+                v["type"] = v["type"].replace("${", "").replace("}", "")
+            if "default" not in list(v.keys()):
+                v["mandatory"] = True
+                v["nullable"] = False
+            elif "default" in list(v.keys()) and v.get("default", "") is None:
+                v["mandatory"] = False
+                v["nullable"] = True
             else:
-                v['mandatory'] = False
-                v['nullable'] = False
-            v = v | {'name': k}
-            if v.get('mandatory') is True:
+                v["mandatory"] = False
+                v["nullable"] = False
+            v = v | {"name": k}
+            if v.get("mandatory") is True:
                 mandatories.append(v)
-            if v.get('nullable') is True:
+            if v.get("nullable") is True:
                 nullables.append(v)
-            if v.get('mandatory') is False and v.get('nullable') is False:
+            if v.get("mandatory") is False and v.get("nullable") is False:
                 optionals.append(v)
             outputs.append(v)
     return outputs, {
-        'mandatories': mandatories,
-        'optionals': optionals,
-        'nullables': nullables,
+        "mandatories": mandatories,
+        "optionals": optionals,
+        "nullables": nullables,
     }
 
 
@@ -208,13 +208,13 @@ def generate(
     yaml_env: str | None = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
-    variables, variables_object = parse_variables(hcl_files['variable'])
+    variables, variables_object = parse_variables(hcl_files["variable"])
 
     if name is None:
         if path is not None:
-            name = path.split('/')[-1:][0]
+            name = path.split("/")[-1:][0]
         else:
-            name = os.path.dirname(url).split('/')[-1:][0].replace('.git', '')
+            name = os.path.dirname(url).split("/")[-1:][0].replace(".git", "")
 
     header, yaml = generate_header(
         name, url, path, version, lookup, variables_object, enabled

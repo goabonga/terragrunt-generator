@@ -18,7 +18,7 @@ def read_file(path: str) -> dict[str, Any]:
 def read_directory(path: str) -> dict[str, Any]:
     datas: dict[str, Any] = {}
     for file in os.listdir(path):
-        if file.endswith('.tf'):
+        if file.endswith(".tf"):
             with contextlib.suppress(Exception):
-                datas = datas | read_file(f'{path}/{file}')
+                datas = datas | read_file(f"{path}/{file}")
     return datas

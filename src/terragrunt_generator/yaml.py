@@ -6,40 +6,38 @@ from typing import Any
 
 
 def format_description(description: str, indent: str) -> str:
-    lines = description.replace('\\"', '"').split('\n')
+    lines = description.replace('\\"', '"').split("\n")
     # if not lines:
     #     return ''
     formatted = lines[0]
     if len(lines) > 1:
         for line in lines[1:]:
-            formatted += f'\n{indent}# {line.lstrip()}'
+            formatted += f"\n{indent}# {line.lstrip()}"
     return formatted
 
 
-def get_yaml(
-    name: str, variables: dict[str, Any], is_enabled: bool = True
-) -> str:
+def get_yaml(name: str, variables: dict[str, Any], is_enabled: bool = True) -> str:
 
-    name_parts = name.split('.')
-    indent = '  ' * len(name_parts)
+    name_parts = name.split(".")
+    indent = "  " * len(name_parts)
 
-    text = ''
-    for var_type in ('mandatories', 'optionals', 'nullables'):
+    text = ""
+    for var_type in ("mandatories", "optionals", "nullables"):
         for variable in variables.get(var_type, []):
-            default = variable.get('default')
-            description = format_description(variable.get('description', ''), indent)
+            default = variable.get("default")
+            description = format_description(variable.get("description", ""), indent)
 
             text += f"{indent}# {variable['name']} - {description}\n"
-            if var_type == 'nullables' or var_type == 'optionals':
+            if var_type == "nullables" or var_type == "optionals":
                 text += f"{indent}# {variable['name']}: {json.dumps(default) if default else ''}\n"
             else:
                 text += f"{indent}{variable['name']}: {json.dumps(default) if default else ''}\n"
 
-    nested_yaml = ''
-    current_indent = ''
+    nested_yaml = ""
+    current_indent = ""
     for part in name_parts:
         nested_yaml += f"{current_indent}{part}:\n"
-        current_indent += '  '
+        current_indent += "  "
 
     return f"""{nested_yaml}{current_indent}enabled: {"true" if is_enabled else "false"}
 {text}"""
@@ -47,7 +45,7 @@ def get_yaml(
 
 def extract_header(lines: list[str]) -> tuple[list[str], list[str]]:
     header, i = [], 0
-    while i < len(lines) and (lines[i].strip().startswith('#') or not lines[i].strip()):
+    while i < len(lines) and (lines[i].strip().startswith("#") or not lines[i].strip()):
         header.append(lines[i])
         i += 1
     return header, lines[i:]
@@ -57,8 +55,8 @@ def is_block_start(line: str, indent: int) -> bool:
     stripped = line.lstrip()
     return (
         len(line) - len(stripped) == indent
-        and stripped.endswith(':')
-        and not stripped.startswith('#')
+        and stripped.endswith(":")
+        and not stripped.startswith("#")
     )
 
 

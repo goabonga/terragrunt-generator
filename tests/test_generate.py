@@ -13,15 +13,15 @@ from terragrunt_generator.generate import (
 
 
 def test_generate_header():
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
 
@@ -47,15 +47,15 @@ def test_generate_header():
 
 
 def test_generate_header_with_deep_lookup():
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'app.test'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "app.test"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
 
@@ -82,15 +82,15 @@ def test_generate_header_with_deep_lookup():
 
 
 def test_generate_header_local_module():
-    url: str = './test/test/'
+    url: str = "./test/test/"
     path: str = None
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
@@ -113,15 +113,15 @@ def test_generate_header_local_module():
 
 
 def test_generate_header_module():
-    url: str = 'https://gitserver.com/test/test.git'
+    url: str = "https://gitserver.com/test/test.git"
     path: str = None
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
@@ -144,15 +144,15 @@ def test_generate_header_module():
 
 
 def test_generate_header_submodule():
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
@@ -175,15 +175,15 @@ def test_generate_header_submodule():
 
 
 def test_generate_header_nested_lookup():
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test.module'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test.module"
+    name: str = "test"
     variables = {
-        'mandatories': [{'name': 'mandatories', 'description': 'mandatories'}],
-        'optionals': [{'name': 'optionals', 'description': 'optionals'}],
-        'nullables': [{'name': 'nullables', 'description': 'nullables'}],
+        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
+        "optionals": [{"name": "optionals", "description": "optionals"}],
+        "nullables": [{"name": "nullables", "description": "nullables"}],
     }
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
@@ -210,19 +210,19 @@ def test_generate_include_with_path():
     results = generate_include()
     print(results)
 
-    assert 'include {\n    path = find_in_parent_folders()\n}\n' in results
+    assert "include {\n    path = find_in_parent_folders()\n}\n" in results
 
 
 def test_generate_include_without_path():
     results = generate_include(False)
 
-    assert '' in results
+    assert "" in results
 
 
 def test_generate_locals():
-    url: str = 'https://gitserver.com/test/test.git'
+    url: str = "https://gitserver.com/test/test.git"
     path = None
-    version: str = '0.1.0'
+    version: str = "0.1.0"
     results = generate_locals(url, path, version)
     print(results)
 
@@ -237,9 +237,9 @@ locals {
 
     assert results == expected
 
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
     results = generate_locals(url, path, version)
     print(results)
 
@@ -256,10 +256,10 @@ locals {
 
 
 def test_generate_terraform():
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test"
     results = generate_terraform(url, path, version, lookup)
 
     expected = """
@@ -274,23 +274,23 @@ terraform {
 def test_generate_inputs():
     variables: list = [
         {
-            'name': 'not_mandatory',
-            'description': 'not mandatory',
-            'mandatory': False,
+            "name": "not_mandatory",
+            "description": "not mandatory",
+            "mandatory": False,
         },
         {
-            'name': 'mandatory',
-            'description': 'mandatory',
-            'mandatory': True,
+            "name": "mandatory",
+            "description": "mandatory",
+            "mandatory": True,
         },
         {
-            'name': 'mandatory_typed',
-            'description': 'mandatory_typed',
-            'mandatory': True,
-            'type': 'string',
+            "name": "mandatory_typed",
+            "description": "mandatory_typed",
+            "mandatory": True,
+            "type": "string",
         },
     ]
-    lookup: str = 'test'
+    lookup: str = "test"
     results = generate_inputs(variables, lookup)
 
     expected = """
@@ -306,9 +306,9 @@ inputs = {
 
     variables.append(
         {
-            'name': 'nullable',
-            'description': 'nullable',
-            'nullable': True,
+            "name": "nullable",
+            "description": "nullable",
+            "nullable": True,
         }
     )
 
@@ -333,21 +333,21 @@ def test_parse_variables():
     variables: list = [
         {
             0: {
-                'name': 'test',
-                'description': 'A',
-                'type': 'string',
-                'default': None,
+                "name": "test",
+                "description": "A",
+                "type": "string",
+                "default": None,
             },
             1: {
-                'name': 'test1',
-                'description': 'A',
-                'type': 'string',
-                'default': 'hello',
+                "name": "test1",
+                "description": "A",
+                "type": "string",
+                "default": "hello",
             },
             2: {
-                'name': 'test2',
-                'description': 'A',
-                'type': 'string',
+                "name": "test2",
+                "description": "A",
+                "type": "string",
             },
         }
     ]
@@ -357,57 +357,57 @@ def test_parse_variables():
     expected = (
         [
             {
-                'name': 0,
-                'description': 'A',
-                'type': 'string',
-                'default': None,
-                'mandatory': False,
-                'nullable': True,
+                "name": 0,
+                "description": "A",
+                "type": "string",
+                "default": None,
+                "mandatory": False,
+                "nullable": True,
             },
             {
-                'name': 1,
-                'description': 'A',
-                'type': 'string',
-                'default': 'hello',
-                'mandatory': False,
-                'nullable': False,
+                "name": 1,
+                "description": "A",
+                "type": "string",
+                "default": "hello",
+                "mandatory": False,
+                "nullable": False,
             },
             {
-                'name': 2,
-                'description': 'A',
-                'type': 'string',
-                'mandatory': True,
-                'nullable': False,
+                "name": 2,
+                "description": "A",
+                "type": "string",
+                "mandatory": True,
+                "nullable": False,
             },
         ],
         {
-            'mandatories': [
+            "mandatories": [
                 {
-                    'name': 2,
-                    'description': 'A',
-                    'type': 'string',
-                    'mandatory': True,
-                    'nullable': False,
+                    "name": 2,
+                    "description": "A",
+                    "type": "string",
+                    "mandatory": True,
+                    "nullable": False,
                 }
             ],
-            'optionals': [
+            "optionals": [
                 {
-                    'name': 1,
-                    'description': 'A',
-                    'type': 'string',
-                    'default': 'hello',
-                    'mandatory': False,
-                    'nullable': False,
+                    "name": 1,
+                    "description": "A",
+                    "type": "string",
+                    "default": "hello",
+                    "mandatory": False,
+                    "nullable": False,
                 }
             ],
-            'nullables': [
+            "nullables": [
                 {
-                    'name': 0,
-                    'description': 'A',
-                    'type': 'string',
-                    'default': None,
-                    'mandatory': False,
-                    'nullable': True,
+                    "name": 0,
+                    "description": "A",
+                    "type": "string",
+                    "default": None,
+                    "mandatory": False,
+                    "nullable": True,
                 }
             ],
         },
@@ -420,31 +420,31 @@ def test_generate():
     hcl_files: list
     include: bool = True
 
-    url: str = 'https://gitserver.com/test/test.git'
+    url: str = "https://gitserver.com/test/test.git"
     path: str = None
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
 
     hcl_files = {
-        'variable': [
+        "variable": [
             {
                 0: {
-                    'name': 'test',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': None,
+                    "name": "test",
+                    "description": "A",
+                    "type": "string",
+                    "default": None,
                 },
                 1: {
-                    'name': 'test1',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': 'hello',
+                    "name": "test1",
+                    "description": "A",
+                    "type": "string",
+                    "default": "hello",
                 },
                 2: {
-                    'name': 'test2',
-                    'description': 'A',
-                    'type': 'string',
+                    "name": "test2",
+                    "description": "A",
+                    "type": "string",
                 },
             }
         ]
@@ -460,7 +460,7 @@ def test_generate():
         name,
     )
 
-    expected = '''# test 0.1.0
+    expected = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/
 #
 # yaml config
@@ -499,38 +499,38 @@ inputs = merge({
 },
   # 0 - A
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
-)'''
+)"""
     print(results)
     assert results == expected
 
     hcl_files: list
     include: bool = True
 
-    url: str = 'test/test_path'
+    url: str = "test/test_path"
     path: str = None
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
 
     hcl_files = {
-        'variable': [
+        "variable": [
             {
                 0: {
-                    'name': 'test',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': None,
+                    "name": "test",
+                    "description": "A",
+                    "type": "string",
+                    "default": None,
                 },
                 1: {
-                    'name': 'test1',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': 'hello',
+                    "name": "test1",
+                    "description": "A",
+                    "type": "string",
+                    "default": "hello",
                 },
                 2: {
-                    'name': 'test2',
-                    'description': 'A',
-                    'type': 'string',
+                    "name": "test2",
+                    "description": "A",
+                    "type": "string",
                 },
             }
         ]
@@ -546,7 +546,7 @@ inputs = merge({
         name,
     )
 
-    expected = '''# test 0.1.0
+    expected = """# test 0.1.0
 # test/test_path
 #
 # yaml config
@@ -585,37 +585,37 @@ inputs = merge({
 },
   # 0 - A
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
-)'''
+)"""
     assert results == expected
 
     hcl_files: list
     include: bool = True
 
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
 
     hcl_files = {
-        'variable': [
+        "variable": [
             {
                 0: {
-                    'name': 'test',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': None,
+                    "name": "test",
+                    "description": "A",
+                    "type": "string",
+                    "default": None,
                 },
                 1: {
-                    'name': 'test1',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': 'hello',
+                    "name": "test1",
+                    "description": "A",
+                    "type": "string",
+                    "default": "hello",
                 },
                 2: {
-                    'name': 'test2',
-                    'description': 'A',
-                    'type': 'string',
+                    "name": "test2",
+                    "description": "A",
+                    "type": "string",
                 },
             }
         ]
@@ -633,7 +633,7 @@ inputs = merge({
 
     print(results)
 
-    expected = '''# test 0.1.0
+    expected = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
 # yaml config
@@ -672,37 +672,37 @@ inputs = merge({
 },
   # 0 - A
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
-)'''
+)"""
     assert results == expected
 
     hcl_files: list
     include: bool = True
 
-    url: str = 'https://gitserver.com/test/test.git'
-    path: str = 'modules/test'
-    version: str = '0.1.0'
-    lookup: str = 'test'
-    name: str = 'test'
+    url: str = "https://gitserver.com/test/test.git"
+    path: str = "modules/test"
+    version: str = "0.1.0"
+    lookup: str = "test"
+    name: str = "test"
 
     hcl_files = {
-        'variable': [
+        "variable": [
             {
                 0: {
-                    'name': 'test',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': None,
+                    "name": "test",
+                    "description": "A",
+                    "type": "string",
+                    "default": None,
                 },
                 1: {
-                    'name': 'test1',
-                    'description': 'A',
-                    'type': 'string',
-                    'default': 'hello',
+                    "name": "test1",
+                    "description": "A",
+                    "type": "string",
+                    "default": "hello",
                 },
                 2: {
-                    'name': 'test2',
-                    'description': 'A',
-                    'type': 'string',
+                    "name": "test2",
+                    "description": "A",
+                    "type": "string",
                 },
             }
         ]
@@ -720,7 +720,7 @@ inputs = merge({
 
     print(results)
 
-    expected = '''# test 0.1.0
+    expected = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
 # yaml config
@@ -759,5 +759,5 @@ inputs = merge({
 },
   # 0 - A
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
-)'''
+)"""
     assert results == expected

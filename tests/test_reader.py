@@ -13,18 +13,18 @@ variable "test" {
 """
 
 
-@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch("builtins.open", new_callable=mock_open, read_data=data)
 def test_read_file(mock_file):
-    path = 'path/to/open'
+    path = "path/to/open"
     results = read_file(path=path)
     mock_file.assert_called_with(path)
-    assert results == {'variable': [{'test': {'default': '', 'type': 'string'}}]}
+    assert results == {"variable": [{"test": {"default": "", "type": "string"}}]}
 
 
-@patch('builtins.open', new_callable=mock_open, read_data=data)
-@patch('hcl2.load', MagicMock(side_effect=Exception('mocked error')))
+@patch("builtins.open", new_callable=mock_open, read_data=data)
+@patch("hcl2.load", MagicMock(side_effect=Exception("mocked error")))
 def test_read_file_except(mock_file):
-    path = 'path/to/open'
+    path = "path/to/open"
     error = None
     try:
         read_file(path=path)
@@ -33,22 +33,22 @@ def test_read_file_except(mock_file):
     assert error is not None
 
 
-@patch('os.listdir', return_value=['test.tf'])
-@patch('builtins.open', new_callable=mock_open, read_data=data)
+@patch("os.listdir", return_value=["test.tf"])
+@patch("builtins.open", new_callable=mock_open, read_data=data)
 def test_read_directory(mock_file, mock_directory):
-    path = 'path/to/open'
+    path = "path/to/open"
     results = read_directory(path)
     mock_directory.assert_called_with(path)
-    mock_file.assert_called_with(f'{path}/test.tf')
-    assert results == {'variable': [{'test': {'default': '', 'type': 'string'}}]}
+    mock_file.assert_called_with(f"{path}/test.tf")
+    assert results == {"variable": [{"test": {"default": "", "type": "string"}}]}
 
 
-@patch('os.listdir', return_value=['test.tf', 'test.tf'])
-@patch('builtins.open', new_callable=mock_open, read_data=data)
-@patch('hcl2.load', MagicMock(side_effect=Exception('mocked error')))
+@patch("os.listdir", return_value=["test.tf", "test.tf"])
+@patch("builtins.open", new_callable=mock_open, read_data=data)
+@patch("hcl2.load", MagicMock(side_effect=Exception("mocked error")))
 def test_read_directory_except(mock_file, mock_directory):
-    path = 'path/to/open'
+    path = "path/to/open"
     results = read_directory(path)
     mock_directory.assert_called_with(path)
-    mock_file.assert_called_with(f'{path}/test.tf')
+    mock_file.assert_called_with(f"{path}/test.tf")
     assert results == {}
