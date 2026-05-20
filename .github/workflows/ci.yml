@@ -29,6 +29,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Sync
         run: uv sync --frozen
       - name: Lint
@@ -45,6 +46,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Sync
         run: uv sync --frozen
       - name: Type-check
@@ -59,6 +61,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Check SPDX headers
         run: |
           uv run python scripts/add_license_header.py --path src --types py --check
@@ -76,6 +79,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Sync
         run: uv sync --frozen
       - name: Run tests with coverage
@@ -108,6 +112,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Run Bandit
         run: uvx bandit --recursive src
 
@@ -120,6 +125,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Sync
         run: uv sync --frozen
       - name: Run pip-audit
@@ -170,6 +176,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Install multicz
         run: uv tool install multicz
       - name: Configure git author
@@ -274,6 +281,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Install multicz
         run: uv tool install multicz
       - name: Build wheel and sdist
@@ -329,6 +337,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ github.job }}
       - name: Install Zensical (doc group)
         run: uv sync --frozen --only-group doc
       - name: Build site
