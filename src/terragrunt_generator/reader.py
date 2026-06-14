@@ -20,9 +20,13 @@ _HCL2_OPTIONS = SerializationOptions(
 
 
 def read_file(path: str) -> dict[str, Any]:
-    datas: dict[str, Any] = {}
     with open(path) as file:
-        datas = hcl2.load(file, serialization_options=_HCL2_OPTIONS)
+        content = file.read()
+    # python-hcl2 (lark) fails to recognise a heredoc terminator when its line
+    # carries trailing whitespace (e.g. `DESCRIPTION `). Terraform accepts such
+    # files, so strip trailing whitespace per line before parsing.
+    content = "\n".join(line.rstrip() for line in content.splitlines())
+    datas: dict[str, Any] = hcl2.loads(content, serialization_options=_HCL2_OPTIONS)
     return datas
 
 

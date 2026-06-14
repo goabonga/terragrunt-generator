@@ -22,7 +22,7 @@ def test_read_file(mock_file):
 
 
 @patch("builtins.open", new_callable=mock_open, read_data=data)
-@patch("hcl2.load", MagicMock(side_effect=Exception("mocked error")))
+@patch("hcl2.loads", MagicMock(side_effect=Exception("mocked error")))
 def test_read_file_except(mock_file):
     path = "path/to/open"
     error = None
@@ -31,6 +31,26 @@ def test_read_file_except(mock_file):
     except Exception as e:
         error = e
     assert error is not None
+
+
+heredoc_data: str = (
+    'variable "test" {\n'
+    "  description = <<DESC\n"
+    "  some text\n"
+    "DESC \n"  # trailing whitespace after the terminator
+    '  type = "string"\n'
+    "}\n"
+)
+
+
+@patch("builtins.open", new_callable=mock_open, read_data=heredoc_data)
+def test_read_file_heredoc_trailing_whitespace(mock_file):
+    # Regression: a heredoc terminator with trailing whitespace (`DESC `) is
+    # rejected by python-hcl2; read_file strips trailing whitespace per line so
+    # such (Terraform-valid) files still parse.
+    results = read_file(path="path/to/open")
+    assert "variable" in results
+    assert results["variable"][0]["test"]["type"] == "string"
 
 
 @patch("os.listdir", return_value=["README.md", "test.tf"])
@@ -46,7 +66,7 @@ def test_read_directory(mock_file, mock_directory):
 
 @patch("os.listdir", return_value=["test.tf", "test.tf"])
 @patch("builtins.open", new_callable=mock_open, read_data=data)
-@patch("hcl2.load", MagicMock(side_effect=Exception("mocked error")))
+@patch("hcl2.loads", MagicMock(side_effect=Exception("mocked error")))
 def test_read_directory_except(mock_file, mock_directory):
     path = "path/to/open"
     results = read_directory(path)
