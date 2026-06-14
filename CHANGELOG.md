@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.1.2] - 2026-06-14
+
+### Fixed
+
+- **reader**: parse heredocs whose terminator line has trailing whitespace (`cc1c4dc`)
+- **generate**: tolerate modules that declare no variables (`a4fc8da`)
+
 ## [1.1.1] - 2026-06-14
 
 ### Fixed
