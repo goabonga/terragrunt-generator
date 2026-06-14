@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.1.1] - 2026-06-14
+
+### Fixed
+
+- **generate**: avoid IndexError when inputs have no optional variables (`ca794e5`)
+
 ## [1.1.0] - 2026-05-20
 
 ### Added

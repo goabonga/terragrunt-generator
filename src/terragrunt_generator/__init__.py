@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
-version = "1.1.0"
+version = "1.1.1"
 __version__ = version
 __prog__ = "terragrunt-generator"

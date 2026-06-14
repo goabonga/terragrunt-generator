@@ -3,7 +3,7 @@
 
 [project]
 name = "terragrunt-generator"
-version = "1.1.0"
+version = "1.1.1"
 description = "Generate documented terragrunt.hcl manifests from Terraform module variables."
 readme = "README.md"
 requires-python = ">=3.13"
