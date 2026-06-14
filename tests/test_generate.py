@@ -371,6 +371,23 @@ def test_generate_inputs_only_mandatory_plain_branch():
     assert 'mandatory = lookup(local.all.test, "mandatory", null)' in results
 
 
+def test_generate_without_variable_key():
+    # Regression: a module that contributes no `variable` blocks leaves
+    # hcl_files without a "variable" key. generate must not raise KeyError.
+    results, yaml = generate(
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+        hcl_files={},
+        include=True,
+        name="test",
+    )
+
+    assert "inputs = {" in results
+    assert "enabled: true" in yaml
+
+
 def test_parse_variables():
     variables: list = [
         {

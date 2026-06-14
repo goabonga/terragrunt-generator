@@ -208,7 +208,7 @@ def generate(
     yaml_env: str | None = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
-    variables, variables_object = parse_variables(hcl_files["variable"])
+    variables, variables_object = parse_variables(hcl_files.get("variable", []))
 
     if name is None:
         if path is not None:
