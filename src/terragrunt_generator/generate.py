@@ -150,13 +150,13 @@ def generate_inputs(
     if content_nullable != "":
         return f"""
 inputs = merge({{
-{content_fisrt}{content_next.rstrip(content_next[-1])}
+{content_fisrt}{content_next.rstrip(content_next[-1]) if content_next else ""}
 }},{content_nullable.rstrip(content_nullable[-1])}
 )"""
 
     return f"""
 inputs = {{
-{content_fisrt}{content_next.rstrip(content_next[-1])}
+{content_fisrt}{content_next.rstrip(content_next[-1]) if content_next else ""}
 }}"""
 
 

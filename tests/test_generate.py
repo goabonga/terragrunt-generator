@@ -343,6 +343,34 @@ inputs = merge({
     assert results == expected
 
 
+def test_generate_inputs_without_optional_merge_branch():
+    # Regression: a module whose variables are only mandatory and nullable
+    # leaves `content_next` empty. Previously `content_next[-1]` raised
+    # IndexError in the merge({...}) branch.
+    variables: list = [
+        {"name": "mandatory", "description": "mandatory", "mandatory": True},
+        {"name": "znullable", "description": "nullable", "nullable": True},
+    ]
+    results = generate_inputs(variables, "test")
+
+    assert "inputs = merge({" in results
+    assert 'mandatory = lookup(local.all.test, "mandatory", null)' in results
+    assert "znullable" in results
+
+
+def test_generate_inputs_only_mandatory_plain_branch():
+    # Regression: only-mandatory variables leave both `content_next` and
+    # `content_nullable` empty, which used to crash the plain inputs = {...}
+    # branch on `content_next[-1]`.
+    variables: list = [
+        {"name": "mandatory", "description": "mandatory", "mandatory": True},
+    ]
+    results = generate_inputs(variables, "test")
+
+    assert results.startswith("\ninputs = {")
+    assert 'mandatory = lookup(local.all.test, "mandatory", null)' in results
+
+
 def test_parse_variables():
     variables: list = [
         {
