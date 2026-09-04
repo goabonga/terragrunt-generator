@@ -74,6 +74,3 @@ site/
 
 # VSCode
 .vscode/
-
-# Pyenv
-.python-version
