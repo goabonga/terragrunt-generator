@@ -29,10 +29,11 @@ dependencies = [
     # back via SerializationOptions(strip_string_quotes, explicit_blocks).
     # Bump this pin deliberately after re-validating the parser output.
     "python-hcl2==8.1.2",
-    # Pinned exactly: GitPython 3.1.50 carries the worktree autodiscovery
-    # and config-key validation fixes. Bump this pin deliberately after
-    # validating each new release.
-    "GitPython==3.1.50",
+    # Pinned exactly: 3.1.61 clears the advisory backlog that accumulated
+    # against 3.1.50 (PYSEC-2026-3783..3788 and the GHSA series, fixed
+    # across 3.1.51-3.1.59). Bump this pin deliberately after validating
+    # each new release.
+    "GitPython==3.1.61",
 ]
 
 [project.scripts]
