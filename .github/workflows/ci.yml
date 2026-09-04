@@ -172,6 +172,10 @@ jobs:
     outputs:
       no_bumps: ${{ steps.bump.outputs.no_bumps }}
       version: ${{ steps.bump.outputs.version }}
+      # True only when the *package* moved. A `docs:` commit bumps the
+      # `docs` component alone, which has no wheel and no PyPI project,
+      # so `no_bumps == 'false'` is not enough to gate `pypi-publish`.
+      package_bumped: ${{ steps.bump.outputs.package_bumped }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -230,6 +234,8 @@ jobs:
           set -euo pipefail
           PLAN=$(uv tool run multicz bump --commit --tag --push --sign --output json)
           BUMPED=$(echo "$PLAN" | jq -r '.bumps | keys | join(" ")')
+          PACKAGE_BUMPED=$(echo "$PLAN" | jq -r '.bumps // {} | has("terragrunt-generator")')
+          echo "package_bumped=$PACKAGE_BUMPED" >> "$GITHUB_OUTPUT"
           if [ -z "$BUMPED" ]; then
             echo "no_bumps=true" >> "$GITHUB_OUTPUT"
           else
@@ -243,6 +249,8 @@ jobs:
           set -euo pipefail
           PLAN=$(uv tool run multicz bump --commit --tag --push --output json)
           BUMPED=$(echo "$PLAN" | jq -r '.bumps | keys | join(" ")')
+          PACKAGE_BUMPED=$(echo "$PLAN" | jq -r '.bumps // {} | has("terragrunt-generator")')
+          echo "package_bumped=$PACKAGE_BUMPED" >> "$GITHUB_OUTPUT"
           if [ -z "$BUMPED" ]; then
             echo "no_bumps=true" >> "$GITHUB_OUTPUT"
           else
@@ -255,9 +263,11 @@ jobs:
           if [ "${{ steps.gpg.outputs.available }}" = "true" ]; then
             echo 'no_bumps=${{ steps.bump_signed.outputs.no_bumps }}' >> "$GITHUB_OUTPUT"
             echo 'version=${{ steps.bump_signed.outputs.version }}' >> "$GITHUB_OUTPUT"
+            echo 'package_bumped=${{ steps.bump_signed.outputs.package_bumped }}' >> "$GITHUB_OUTPUT"
           else
             echo 'no_bumps=${{ steps.bump_unsigned.outputs.no_bumps }}' >> "$GITHUB_OUTPUT"
             echo 'version=${{ steps.bump_unsigned.outputs.version }}' >> "$GITHUB_OUTPUT"
+            echo 'package_bumped=${{ steps.bump_unsigned.outputs.package_bumped }}' >> "$GITHUB_OUTPUT"
           fi
 
   # Build and publish to PyPI, then create the GitHub Release. Trusted
@@ -269,7 +279,7 @@ jobs:
       github.event_name == 'push'
       && github.ref == 'refs/heads/main'
       && needs.release.result == 'success'
-      && needs.release.outputs.no_bumps == 'false'
+      && needs.release.outputs.package_bumped == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -312,16 +322,37 @@ jobs:
           notes=$(uv tool run multicz release-notes --tag "$tag")
           gh release create "$tag" --title "$tag" --notes "$notes" dist/*
 
-  # Build the Zensical site and deploy it to GitHub Pages on every
-  # successful release bump.
+  # Build the Zensical site and deploy it to GitHub Pages. Gated on any
+  # successful release, which covers both directions now that `docs` is
+  # a multicz component:
+  #
+  #   - a package bump cascades a `docs` patch (the site embeds version
+  #     numbers and changelog content, so a release invalidates the
+  #     rendered output even when no markdown was touched);
+  #   - a `docs:` push bumps the `docs` component directly, so the site
+  #     redeploys without the package moving.
+  #
+  # Deliberately NOT gated on `no_bumps == 'false'`: a downstream job
+  # cannot verify an upstream output's server-side value, and the same
+  # term silently skipped this job in the sibling repository with every
+  # visible input satisfied. Nothing is lost by dropping it - `release`
+  # only runs on a push to main, and rebuilding the site is idempotent;
+  # the narrow case it used to exclude (release ran, planner bumped
+  # nothing) now costs one redundant redeploy of a site that should
+  # mirror main anyway.
+  #
+  # Runs in parallel with `pypi-publish` - the site documents the source
+  # at the tagged commit, not the PyPI artifact, so it does not need
+  # PyPI to be live first. On a docs-only release `pypi-publish` does
+  # not run at all.
   docs:
     name: docs
     needs: [release]
     if: >-
-      github.event_name == 'push'
+      !cancelled()
+      && github.event_name == 'push'
       && github.ref == 'refs/heads/main'
       && needs.release.result == 'success'
-      && needs.release.outputs.no_bumps == 'false'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -331,8 +362,23 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - name: Record the release outputs this job was gated on
+        # Cheap forensics: a skipped deploy otherwise leaves no trace of
+        # what the downstream gate actually read.
+        run: |
+          {
+            echo "## Docs deploy - release outputs as seen downstream"
+            echo ""
+            echo "| Output | Value |"
+            echo "| --- | --- |"
+            echo "| \`no_bumps\` | \`${{ needs.release.outputs.no_bumps }}\` |"
+            echo "| \`package_bumped\` | \`${{ needs.release.outputs.package_bumped }}\` |"
+            echo "| \`version\` | \`${{ needs.release.outputs.version }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v6
         with:
+          # Pull the release commit multicz just pushed so the site is
+          # built from the tagged tree, not the pre-release one.
           ref: main
       - uses: actions/configure-pages@v6
         with:
