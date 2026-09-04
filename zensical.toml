@@ -22,6 +22,19 @@ nav = [
     { "Stability & deprecation" = "stability.md" },
 ]
 
+# Footer. `copyright` renders in the highlighted slot of
+# `partials/copyright.html`, above the theme's own attribution line;
+# `extra.generator = false` is the switch that partial reads to drop
+# that line, leaving this as the only footer text. Raw HTML, not
+# Markdown - the value is interpolated into the template as-is.
+copyright = """
+Made with <span style="color: #e25555;">&#10084;</span> by
+<a href="https://github.com/goabonga" target="_blank" rel="noopener">goabonga</a>
+"""
+
+[project.extra]
+generator = false
+
 # Branding. Both files are generated from
 # `assets/terragrunt-generator.svg` by `scripts/regen-icons.sh` and
 # committed: the docs job builds the site from the checked-in tree and
