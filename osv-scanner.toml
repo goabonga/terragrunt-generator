@@ -5,17 +5,7 @@
 # cannot be acted on yet; each carries a justification and an
 # `ignoreUntil` review date so the suppression is revisited, not
 # forgotten.
-
-[[IgnoredVulns]]
-id = "PYSEC-2026-89"            # CVE-2025-69534 / GHSA-5wmx-573v-2qwq
-ignoreUntil = 2026-08-20
-# DoS in python-markdown: malformed HTML-like input raises an uncaught
-# AssertionError. Per OSV, ALL markdown versions are affected and no fix
-# is released yet (the latest published 3.10.2 is still vulnerable), so
-# there is nothing to upgrade to. `markdown` is a transitive dependency
-# of the docs tooling only (zensical -> pymdown-extensions, the `doc`
-# group); it is NOT in the shipped wheel (runtime deps are python-hcl2
-# and GitPython) nor the `dev` group. It only parses this repo's own
-# trusted docs at build time - no attacker-controlled markdown. Drop
-# this entry once a patched markdown is published.
-reason = "No fix available; doc-build-only transitive dep (zensical), trusted input"
+#
+# Currently empty: the list is the exception, not the norm. Prefer
+# upgrading the dependency; add an `[[IgnoredVulns]]` block only when
+# there is genuinely nothing to upgrade to.
