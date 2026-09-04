@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  SPDX-License-Identifier: MIT
+  Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+  terragrunt-generator master logo. Regenerate the derived assets
+  (docs/terragrunt-generator.svg, docs/favicon.ico) with
+  `scripts/regen-icons.sh` after editing.
+
+  Three bars of decreasing width funnel into a single solid block: the
+  many `variable` blocks a Terraform module exposes, converging into the
+  one `terragrunt.hcl` manifest the tool emits. The deep purple is
+  Terraform's own family and matches the site palette
+  (zensical `primary = "deep-purple"`), so the mark and the docs chrome
+  read as one thing.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Rounded shell -->
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="#4527A0"/>
+  <rect x="34" y="34" width="188" height="188" rx="40" fill="#673AB7"/>
+  <!-- Module variables: three bars narrowing toward the output -->
+  <g fill="#FFFFFF">
+    <rect x="58" y="72" width="140" height="20" rx="10"/>
+    <rect x="76" y="106" width="104" height="20" rx="10"/>
+    <rect x="94" y="140" width="68" height="20" rx="10"/>
+  </g>
+  <!-- The emitted manifest -->
+  <rect x="94" y="176" width="68" height="36" rx="12" fill="#311B92"/>
+</svg>
