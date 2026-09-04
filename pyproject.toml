@@ -72,6 +72,14 @@ dev = [
 doc = [
     "zensical",
 ]
+# Branding-asset tooling, isolated from `dev` and `doc` so neither the
+# quality pipeline nor the docs build drags a native cairo stack in.
+# Only `scripts/regen-icons.sh` installs it, on demand, via
+# `uv run --only-group favicon`.
+favicon = [
+    "cairosvg>=2.7",
+    "pillow>=10.0",
+]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
