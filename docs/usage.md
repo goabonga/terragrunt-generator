@@ -85,7 +85,7 @@ any existing content rather than overwriting it.
 
 ## End-to-end example
 
-For a complete, realistic flow — scaffolding a repository with Cookiecutter and
+For a complete, realistic flow - scaffolding a repository with Cookiecutter and
 populating a whole GCP foundation (network, KMS, GKE, …) with
-`terragrunt-generator` — see
+`terragrunt-generator` - see
 [Bootstrap a GCP infra](bootstrap-gcp.md).

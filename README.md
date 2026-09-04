@@ -6,8 +6,8 @@
 [![Python](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-**terragrunt-generator** generates `terragrunt.hcl` configuration files — with
-documented inputs — from the variables exposed by a Terraform module. Point it
+**terragrunt-generator** generates `terragrunt.hcl` configuration files - with
+documented inputs - from the variables exposed by a Terraform module. Point it
 at a module (a git repository or a local directory), tell it where to look up
 values, and it emits a ready-to-edit Terragrunt manifest plus an optional YAML
 config skeleton.
@@ -96,8 +96,8 @@ uv run pre-commit install
 ## Versioning and release
 
 Releases are automated. Every push to `main` runs
-`multicz bump --commit --tag --push` — driven by
-[Conventional Commits](https://www.conventionalcommits.org/) — then publishes
+`multicz bump --commit --tag --push` - driven by
+[Conventional Commits](https://www.conventionalcommits.org/) - then publishes
 to PyPI and deploys the docs.
 
 ```bash

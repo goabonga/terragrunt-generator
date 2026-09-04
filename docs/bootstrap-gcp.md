@@ -17,13 +17,13 @@ per-environment YAML file.
 
 ## Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) — runs both `cookiecutter` and
+- [uv](https://docs.astral.sh/uv/) - runs both `cookiecutter` and
   `terragrunt-generator` on demand via `uvx` (no manual install; uv also
   provisions a suitable Python)
 - [Terraform](https://www.terraform.io) and [Terragrunt](https://terragrunt.gruntwork.io)
 - [`gcloud`](https://cloud.google.com/sdk/docs/install) authenticated against your project
 
-## Step 1 — scaffold the repository
+## Step 1 - scaffold the repository
 
 The template is non-interactive friendly. Feed it a default context and let it
 generate the project (the slug `gcp_infrastructure` is derived from
@@ -59,12 +59,12 @@ gcp_infrastructure/
 The root `google/terragrunt.hcl` is the parent that each generated module
 includes via `find_in_parent_folders()`. It wires up three things:
 
-- **Environment + values** — `local.environment` from `get_env("ENV", "dev")`,
+- **Environment + values** - `local.environment` from `get_env("ENV", "dev")`,
   and `local.config` merged from `config.<env>.yaml`.
-- **Remote state** — a `gcs` backend keyed by
+- **Remote state** - a `gcs` backend keyed by
   `<environment>/<path_relative_to_include>`, so every module gets an isolated
   state path automatically.
-- **Generated provider + versions files** — `google` / `google-beta` providers
+- **Generated provider + versions files** - `google` / `google-beta` providers
   and a `required_version` pin, regenerated on each run.
 
 ```hcl
@@ -92,11 +92,11 @@ remote_state:
   bucket: my-tf-state-bucket
 ```
 
-## Step 2 — populate modules with terragrunt-generator
+## Step 2 - populate modules with terragrunt-generator
 
 Move into the generated project, then generate one module per Terraform
 source. With [uv](https://docs.astral.sh/uv/), `uvx terragrunt-generator`
-fetches and runs the tool in a cached, ephemeral environment — no virtualenv
+fetches and runs the tool in a cached, ephemeral environment - no virtualenv
 to create or activate:
 
 ```bash
@@ -118,15 +118,15 @@ uvx terragrunt-generator \
 
 What that one command does:
 
-- `-u` / `-v` / `-p` — the module's git source, ref, and subpath. The child
+- `-u` / `-v` / `-p` - the module's git source, ref, and subpath. The child
   `terragrunt.hcl` pins `terraform.source` to exactly this.
-- `-l network.vpc` — the **lookup key**. Inputs resolve from
+- `-l network.vpc` - the **lookup key**. Inputs resolve from
   `local.all.network.vpc.*`, and the module is gated on
   `network.vpc.enabled` in the YAML.
-- `--output google/network/vpc` — where the child `terragrunt.hcl` is written.
+- `--output google/network/vpc` - where the child `terragrunt.hcl` is written.
   Its `include { path = find_in_parent_folders() }` finds the root
   `google/terragrunt.hcl`.
-- `--yaml-output ./` + `--yaml-for-env dev` — append (and **merge**, never
+- `--yaml-output ./` + `--yaml-for-env dev` - append (and **merge**, never
   overwrite) the module's documented inputs under the `network.vpc` key of
   `config.dev.yaml`.
 
@@ -170,7 +170,7 @@ gcp_infrastructure/
     └── gke/{cluster,workload-identity}/terragrunt.hcl
 ```
 
-`config.dev.yaml` mirrors that tree — one block per lookup key, each commented
+`config.dev.yaml` mirrors that tree - one block per lookup key, each commented
 with the module's variable documentation so you know what to fill in:
 
 ```yaml
@@ -205,12 +205,12 @@ apply ./google/network/vpc
 
 Because every module shares the root config and the single `config.<env>.yaml`,
 adding a new environment is just a new `config.staging.yaml` and
-`switch_env staging` — no module edits required.
+`switch_env staging` - no module edits required.
 
 ## The full bootstrap script
 
-The complete reference script — cookiecutter scaffold plus every
-`terragrunt-generator` invocation — is reproduced below. Save it as
+The complete reference script - cookiecutter scaffold plus every
+`terragrunt-generator` invocation - is reproduced below. Save it as
 `bootstrap_gcp_infra.sh` and run it from an empty directory; it creates the
 project, provisions a virtualenv, and writes the Terragrunt files. It does not
 apply anything to your cloud account on its own.

@@ -23,7 +23,7 @@ a library and rely on their signatures.
 terragrunt-generator follows [Semantic Versioning](https://semver.org/).
 Releases are automated from
 [Conventional Commits](https://www.conventionalcommits.org/) by
-[multicz](https://github.com/goabonga/multicz) — see
+[multicz](https://github.com/goabonga/multicz) - see
 [CONTRIBUTING.md](https://github.com/goabonga/terragrunt-generator/blob/main/CONTRIBUTING.md#commit-messages)
 for the commit-type → bump-level mapping.
 
@@ -43,7 +43,7 @@ current minor:
   Patches (`M.m.z`) never deprecate or remove.
 - The announcement and warning land in the release that introduces them.
 - `feat!:` / `BREAKING CHANGE:` (a major bump) is reserved for changes that
-  **bypass** the n+2 window — security fixes, or design errors that cannot
+  **bypass** the n+2 window - security fixes, or design errors that cannot
   wait two minor cycles.
 
 ### Exceptions
@@ -63,5 +63,5 @@ dependencies = [
 ]
 ```
 
-Read `CHANGELOG.md` before every bump — every removal is listed under a
+Read `CHANGELOG.md` before every bump - every removal is listed under a
 `Removed` section and back-references the original `Deprecated` entry.

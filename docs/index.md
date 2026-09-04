@@ -1,7 +1,7 @@
 # terragrunt-generator
 
-**terragrunt-generator** generates `terragrunt.hcl` configuration files —
-with documented inputs — from the variables exposed by a Terraform module.
+**terragrunt-generator** generates `terragrunt.hcl` configuration files -
+with documented inputs - from the variables exposed by a Terraform module.
 Point it at a module (a git repository or a local directory), tell it where
 to look up values, and it emits a ready-to-edit Terragrunt manifest plus an
 optional YAML config skeleton.
