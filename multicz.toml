@@ -80,3 +80,30 @@ post_bump = ["uv lock"]
 [[components.terragrunt-generator.artifacts]]
 type = "pypi"
 ref = "terragrunt-generator=={version}"
+
+# `docs` is a release-tracked component for the Zensical site. It ships
+# no artifact - the "release" is the GitHub Pages deploy - but giving
+# the site a version and a tag is what lets multicz answer "did the docs
+# move?" the same tag-aware way it answers the question for the package,
+# which is what the `docs` CI job gates on.
+#
+# `depends_on` the package so a code release also cascades a docs patch:
+# the site embeds changelog content and version numbers, so a package
+# bump invalidates the rendered output even when no markdown file was
+# touched.
+#
+# `bump_rules` here MERGES into `[project.bump_rules]`, adding `docs` on
+# top of the inherited feat/fix/perf/revert/deprecate/remove. A `docs:`
+# commit therefore bumps this component and nothing else - the package
+# inherits the project rules, where `docs` is absent.
+[components.docs]
+paths = ["docs/**", "zensical.toml"]
+# The project-level `tag_format = "{version}"` is bare, so the two
+# components would tag identically and collide. The site gets a
+# namespaced tag of its own; the package keeps the bare history.
+tag_format = "docs-v{version}"
+bump_files = [
+    { file = "zensical.toml", key = "project.extra.versions.docs" },
+]
+depends_on = ["terragrunt-generator"]
+bump_rules = { docs = "patch" }
