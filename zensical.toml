@@ -30,3 +30,23 @@ nav = [
 [project.theme]
 logo = "terragrunt-generator.svg"
 favicon = "favicon.ico"
+
+# Dark first. Neither entry declares `media`, so the OS
+# `prefers-color-scheme` is ignored and every visitor lands on the first
+# one - slate - whatever their system is set to. The toggle in the
+# header switches to the next entry and the theme persists that choice
+# in localStorage, so the pin only decides the *first* visit.
+#
+# Deep purple matches the logo; without an explicit `primary`/`accent`
+# the palette partial falls back to indigo, which clashes with it.
+[[project.theme.palette]]
+scheme = "slate"
+primary = "deep purple"
+accent = "deep purple"
+toggle = { icon = "material/brightness-4", name = "Switch to light mode" }
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "deep purple"
+accent = "deep purple"
+toggle = { icon = "material/brightness-7", name = "Switch to dark mode" }
