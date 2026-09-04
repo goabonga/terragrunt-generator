@@ -1,10 +1,19 @@
-# terragrunt-generator
+<h1 align="center">
+  <img src="docs/terragrunt-generator.svg" alt="terragrunt-generator" width="120" /><br/>
+  terragrunt-generator
+</h1>
 
-[![CI](https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml)
-[![Codecov](https://img.shields.io/codecov/c/github/goabonga/terragrunt-generator?logo=codecov)](https://codecov.io/gh/goabonga/terragrunt-generator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/goabonga/terragrunt-generator/blob/main/LICENSE)
-[![Python](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+<p align="center">
+  <em>Generate documented terragrunt.hcl manifests from Terraform module variables.</em>
+</p>
+
+<p align="center">
+  <a href="https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml"><img src="https://github.com/goabonga/terragrunt-generator/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"/></a>
+  <a href="https://codecov.io/gh/goabonga/terragrunt-generator"><img src="https://img.shields.io/codecov/c/github/goabonga/terragrunt-generator?logo=codecov" alt="Codecov"/></a>
+  <a href="https://github.com/goabonga/terragrunt-generator/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.13%2B-blue.svg" alt="Python"/></a>
+  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"/></a>
+</p>
 
 **terragrunt-generator** generates `terragrunt.hcl` configuration files - with
 documented inputs - from the variables exposed by a Terraform module. Point it
