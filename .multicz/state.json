@@ -1,12 +1,17 @@
 {
   "version": 1,
-  "git_head": "a4fc8da53a2e3d9c658147bc781cc5f33597b4bd",
-  "git_head_short": "a4fc8da",
-  "timestamp": "2026-06-14T21:31:23Z",
+  "git_head": "2e36b0619baa309191e2b382dfe3967a13b67202",
+  "git_head_short": "2e36b06",
+  "timestamp": "2026-09-04T11:32:51Z",
   "components": {
     "terragrunt-generator": {
-      "version": "1.1.2",
-      "tag": "1.1.2",
+      "version": "1.1.3",
+      "tag": "1.1.3",
+      "tag_sha": null
+    },
+    "docs": {
+      "version": "0.0.1",
+      "tag": "docs-v0.0.1",
       "tag_sha": null
     }
   }

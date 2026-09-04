@@ -40,7 +40,7 @@ generator = false
 # the component's only version file - the package version lives in
 # pyproject.toml and the site does not render either number anywhere.
 [project.extra.versions]
-docs = "0.0.0"
+docs = "0.0.1"
 
 # Branding. Both files are generated from
 # `assets/terragrunt-generator.svg` by `scripts/regen-icons.sh` and

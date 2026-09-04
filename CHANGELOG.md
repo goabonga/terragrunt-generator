@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.1.3] - 2026-09-04
+
+### Fixed
+
+- **deps**: bump gitpython to 3.1.61 (`9773f0a`)
+
 ## [1.1.2] - 2026-06-14
 
 ### Fixed
