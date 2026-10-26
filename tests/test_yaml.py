@@ -221,9 +221,7 @@ def test_split_level_keeps_the_scalars_that_follow_a_block_with_it():
 def test_merge_level_keeps_the_values_of_the_existing_lines():
     merged = merge_level(["a:", "  x: kept"], ["a:", "  x: replaced"], 0)
 
-    assert "  x: kept" in merged
-    assert "  x: replaced" in merged
-    assert merged.index("  x: kept") < merged.index("  x: replaced")
+    assert merged == ["a:", "  x: kept"]
 
 
 def test_merge_level_merges_the_keys_of_both_levels_one_level_down():
@@ -292,3 +290,87 @@ def test_get_yaml_leaves_the_mandatory_and_nullable_values_empty():
 
     assert "  required: \n" in results
     assert "  # nullable: \n" in results
+
+
+EDITED = """gke:
+  cluster:
+    enabled: true
+    # name - The name
+    name: my-cluster
+    # size - Size
+    # size: 10
+"""
+
+
+def test_merge_does_not_repeat_a_key_whose_value_was_edited():
+    generated = """gke:
+  cluster:
+    enabled: true
+    # name - The name
+    name: 
+    # size - Size
+    # size: 10
+"""
+
+    assert merge_yaml_strings(EDITED, generated).strip() == EDITED.strip()
+
+
+def test_merge_does_not_bring_back_an_option_the_user_uncommented():
+    existing = "gke:\n  cluster:\n    # size - Size\n    size: 20\n"
+    generated = "gke:\n  cluster:\n    # size - Size\n    # size: 10\n"
+
+    assert merge_yaml_strings(existing, generated).strip() == existing.strip()
+
+
+def test_merge_does_not_bring_back_an_option_the_user_changed_in_a_comment():
+    existing = "gke:\n  cluster:\n    # size: 20\n"
+    generated = "gke:\n  cluster:\n    # size: 10\n"
+
+    assert merge_yaml_strings(existing, generated).strip() == existing.strip()
+
+
+def test_merge_still_adds_the_variables_the_module_gained():
+    generated = """gke:
+  cluster:
+    enabled: true
+    # name - The name
+    name: 
+    # size - Size
+    # size: 10
+    # zone - Zone
+    zone: 
+    # flag - Flag
+    # flag: false
+"""
+
+    merged = merge_yaml_strings(EDITED, generated)
+
+    assert merged.count("name:") == 1
+    assert "    name: my-cluster\n" in merged
+    assert merged.endswith(
+        "    # zone - Zone\n    zone: \n    # flag - Flag\n    # flag: false"
+    )
+
+
+def test_merge_only_looks_for_a_key_among_the_lines_of_its_own_block():
+    existing = "gke:\n  helper:\n    enabled: true\n  cluster:\n    name: x\n"
+    generated = "gke:\n  cluster:\n    enabled: true\n"
+
+    merged = merge_yaml_strings(existing, generated)
+
+    assert merged.endswith("  cluster:\n    name: x\n    enabled: true")
+
+
+def test_regenerating_an_edited_config_keeps_every_key_once():
+    variables = [
+        Variable("name", "The name"),
+        Variable("size", "Size", default=10),
+        Variable("tags", "Tags", default=None),
+    ]
+    generated = get_yaml("gke.cluster", variables)
+    edited = generated.replace("name: \n", "name: my-cluster\n")
+    edited = edited.replace("# size: 10", "size: 20")
+
+    again = merge_yaml_strings(edited, generated)
+
+    assert again.strip() == edited.strip()
