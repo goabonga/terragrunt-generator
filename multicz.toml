@@ -58,8 +58,9 @@ types = ["perf"]
 
 [components.terragrunt-generator]
 # A commit is attributed to this component (for the bump and the
-# CHANGELOG) only if it touches one of these paths - the source and the
-# project/deps/metadata file. Everything else (LICENSE, README, .github,
+# CHANGELOG) only if it touches one of these paths - the source, the
+# project/metadata file and its lock (a runtime dependency bump only
+# touches uv.lock). Everything else (LICENSE, README, .github,
 # docs, tests, scripts, tooling configs) is intentionally NOT tracked, so
 # infra/docs-only work never counts as a package release.
 #
@@ -69,7 +70,7 @@ types = ["perf"]
 # LICENSE/COPYING. So a relicense (or any metadata change that should
 # ship) MUST also edit pyproject.toml - e.g. the `license` field - to be
 # picked up.
-paths = ["src/**", "pyproject.toml"]
+paths = ["src/**", "pyproject.toml", "uv.lock"]
 bump_files = [
     { file = "pyproject.toml", key = "project.version" },
     { file = "src/terragrunt_generator/__init__.py", key = "regex:version\\s*=\\s*[\"']([^\"']+)[\"']" },
