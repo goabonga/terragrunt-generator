@@ -373,6 +373,14 @@ jobs:
           tag="${version}"
           notes=$(uv tool run multicz release-notes --tag "$tag")
           gh release create "$tag" --title "$tag" --notes "$notes" dist/*
+      - name: Summarize publish
+        if: ${{ !cancelled() }}
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: >-
+          python3 scripts/format_summary.py publish dist
+          --package terragrunt-generator
+          --version "${{ needs.release.outputs.version }}"
 
   # Build the Zensical site and deploy it to GitHub Pages. Gated on any
   # successful release, which covers both directions now that `docs` is

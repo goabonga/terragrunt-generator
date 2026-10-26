@@ -11,6 +11,7 @@ formats: the tool step has already decided whether the job fails.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -93,6 +94,8 @@ class Arguments(argparse.Namespace):
     junit: str = ""
     coverage: str | None = None
     title: str = ""
+    package: str = ""
+    version: str = ""
 
 
 OK, FAIL, WARN = "✅", "❌", "⚠️"
@@ -325,6 +328,39 @@ def release_summary(path: str | None) -> str:
     return f"## {OK} release\n\n" + table(["Component", "From", "To"], rows) + "\n"
 
 
+def publish_summary(
+    path: str | None, package: str, version: str, repository: str, status: str
+) -> str:
+    """The distributions built for a release and where they were published."""
+    # `uv build` drops a .gitignore next to the distributions.
+    files = (
+        sorted(f for f in Path(path).iterdir() if not f.name.startswith("."))
+        if path and Path(path).is_dir()
+        else []
+    )
+    if not files:
+        return missing_report("PyPI publish", path)
+    icon = OK if status == "success" else FAIL if status == "failure" else WARN
+    rows = [
+        (
+            f"`{file.name}`",
+            f"{file.stat().st_size / 1024:.1f} KiB",
+            hashlib.sha256(file.read_bytes()).hexdigest()[:16],
+        )
+        for file in files
+    ]
+    links = [f"- PyPI: <https://pypi.org/project/{package}/{version}/>"]
+    if repository:
+        links.append(f"- GitHub release: <https://github.com/{repository}/releases/tag/{version}>")
+    return (
+        f"## {icon} PyPI publish\n\n`{package}` {version}\n\n"
+        + table(["File", "Size", "SHA-256"], rows)
+        + "\n\n"
+        + "\n".join(links)
+        + "\n"
+    )
+
+
 def emit(text: str) -> None:
     target = os.environ.get("GITHUB_STEP_SUMMARY")
     if target:
@@ -345,6 +381,10 @@ def main(argv: list[str] | None = None) -> None:
     text = sub.add_parser("text")
     _ = text.add_argument("title")
     _ = text.add_argument("report")
+    publish = sub.add_parser("publish")
+    _ = publish.add_argument("report")
+    _ = publish.add_argument("--package", required=True)
+    _ = publish.add_argument("--version", required=True)
     args = parser.parse_args(argv, namespace=Arguments())
     if args.command == "ruff-check":
         annotations = ruff_annotations(args.report)
@@ -355,6 +395,10 @@ def main(argv: list[str] | None = None) -> None:
         emit(pytest_summary(args.junit, args.coverage))
     elif args.command == "text":
         emit(text_summary(args.title, args.report, os.environ.get("JOB_STATUS", "")))
+    elif args.command == "publish":
+        repository = os.environ.get("GITHUB_REPOSITORY", "")
+        status = os.environ.get("JOB_STATUS", "")
+        emit(publish_summary(args.report, args.package, args.version, repository, status))
     else:
         formatters = {
             "ruff-format": ruff_format,
