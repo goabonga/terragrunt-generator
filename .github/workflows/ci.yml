@@ -9,6 +9,10 @@ on:
   push:
     branches: [main]
 
+# The quality jobs skip the `chore(release)` commit multicz pushes to main:
+# the run that cut the release already validated the code it carries, and
+# `release` and its publish jobs need them, so they are skipped with them.
+
 # `concurrency` cancels superseded PR runs but never main-branch releases.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,6 +32,7 @@ jobs:
   # for contributors who skipped the pre-commit hooks.
   lint:
     name: lint
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -52,6 +57,7 @@ jobs:
   # Strict static type checking with mypy on the public src/.
   type-check:
     name: type-check
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -72,6 +78,7 @@ jobs:
   # Verify the two-line SPDX header on every Python source and config.
   license-headers:
     name: license-headers
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -95,6 +102,7 @@ jobs:
   # Run the test suite with coverage and report to Codecov.
   test:
     name: test
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -135,6 +143,7 @@ jobs:
   # Static security analysis of the source (Bandit).
   bandit:
     name: bandit
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -151,6 +160,7 @@ jobs:
   # Audit the locked dependency graph against the PyPI advisory DB.
   pip-audit:
     name: pip-audit
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -171,6 +181,7 @@ jobs:
   # Multi-source vulnerability scan via OSV-Scanner (reads uv.lock).
   osv-scanner:
     name: osv-scanner
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
