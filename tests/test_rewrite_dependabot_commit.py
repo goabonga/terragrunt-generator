@@ -125,3 +125,36 @@ def test_main_amends_the_commit(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_git_returns_stripped_output() -> None:
     assert rewrite.git("--version").startswith("git version")
+
+
+def test_a_single_commit_gives_its_subject_to_the_pull_request() -> None:
+    title = rewrite.pull_request_title(
+        "chore(deps): bump tomlkit from 0.14.0 to 0.15.2",
+        ["fix(deps): bump tomlkit from 0.14.0 to 0.15.2"],
+    )
+    assert title == "fix(deps): bump tomlkit from 0.14.0 to 0.15.2"
+
+
+def test_a_group_keeps_its_title_under_the_type_of_the_first_commit() -> None:
+    title = rewrite.pull_request_title(
+        "bump the dev-tools group with 2 updates",
+        ["chore(deps): bump ruff from 1 to 2", "chore(deps): bump mypy from 1 to 2"],
+    )
+    assert title == "chore(deps): bump the dev-tools group with 2 updates"
+
+
+@pytest.mark.parametrize("subjects", [[], ["not conventional", "still not"]])
+def test_without_a_typed_commit_the_title_is_unchanged(subjects: list[str]) -> None:
+    title = "chore(deps): bump the group"
+    assert rewrite.pull_request_title(title, subjects) == title
+
+
+def test_print_title_reads_the_range_and_the_environment(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("PR_TITLE", "bump the ci-actions group with 2 updates")
+    monkeypatch.setattr(
+        rewrite, "git", lambda *args: "ci: bump a from 1 to 2\nci: bump b from 1 to 2"
+    )
+    rewrite.print_title("origin/main..HEAD")
+    assert capsys.readouterr().out == "ci: bump the ci-actions group with 2 updates\n"
