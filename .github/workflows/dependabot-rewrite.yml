@@ -18,17 +18,19 @@ name: dependabot-rewrite
 
 on:  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
-permissions:
-  contents: write       # force-push the rewritten branch
-  pull-requests: write  # update the PR
+permissions: {}
 
 jobs:
   rewrite:
     name: rewrite dependabot commits
-    if: github.event.pull_request.user.id == 49699333
+    if: github.event.action != 'closed' && github.event.pull_request.user.id == 49699333
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write       # force-push the rewritten branch
+      pull-requests: write  # update the PR
+      issues: write         # track the PR with an issue
     concurrency:
       group: dependabot-rewrite-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -191,6 +193,17 @@ jobs:
             gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --method PATCH --field title="$TITLE"
           fi
 
+      - name: Track the pull request with an issue
+        # The issue is assigned to the repository owner and closed with
+        # the pull request: `Closes #N` in its description covers a merge
+        # through the interface, the close job covers the rest.
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 "$GITHUB_WORKSPACE/trusted/scripts/dependabot_issue.py" link
+
       - name: Write step summary
         if: steps.gate.outputs.skip != 'true' && success()
         working-directory: pr
@@ -204,5 +217,28 @@ jobs:
             echo ""
             echo "- Conventional Commit type inferred: \`ci\`, \`fix(deps)\` (runtime) or \`chore(deps)\` (dev)"
             echo "- A group that only touches uv.lock is split into one commit per dependency"
+            echo "- The pull request is tracked by an issue closed with it"
             echo "- Authored and GPG-signed as \`$(git config user.name) <$(git config user.email)>\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  close-issue:
+    name: close the linked issue
+    if: github.event.action == 'closed' && github.event.pull_request.user.id == 49699333
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout trusted code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Close the issue of the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGED: ${{ github.event.pull_request.merged }}
+        run: python3 scripts/dependabot_issue.py close
