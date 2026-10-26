@@ -8,8 +8,8 @@ from terragrunt_generator.generate import (
     generate_inputs,
     generate_locals,
     generate_terraform,
-    parse_variables,
 )
+from terragrunt_generator.variables import Variable
 
 
 def test_generate_header():
@@ -18,11 +18,11 @@ def test_generate_header():
     version: str = "0.1.0"
     lookup: str = "test"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
 
     print(results)
@@ -66,11 +66,11 @@ def test_generate_header_with_deep_lookup():
     version: str = "0.1.0"
     lookup: str = "app.test"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
 
     print(results)
@@ -101,11 +101,11 @@ def test_generate_header_local_module():
     version: str = "0.1.0"
     lookup: str = "test"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # ./test/test/
@@ -132,11 +132,11 @@ def test_generate_header_module():
     version: str = "0.1.0"
     lookup: str = "test"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/
@@ -163,11 +163,11 @@ def test_generate_header_submodule():
     version: str = "0.1.0"
     lookup: str = "test"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
@@ -194,11 +194,11 @@ def test_generate_header_nested_lookup():
     version: str = "0.1.0"
     lookup: str = "test.module"
     name: str = "test"
-    variables = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [{"name": "optionals", "description": "optionals"}],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default=""),
+        Variable("nullables", "nullables", default=None),
+    ]
     results, yaml = generate_header(name, url, path, version, lookup, variables)
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
@@ -286,23 +286,10 @@ terraform {
 
 
 def test_generate_inputs():
-    variables: list = [
-        {
-            "name": "not_mandatory",
-            "description": "not mandatory",
-            "mandatory": False,
-        },
-        {
-            "name": "mandatory",
-            "description": "mandatory",
-            "mandatory": True,
-        },
-        {
-            "name": "mandatory_typed",
-            "description": "mandatory_typed",
-            "mandatory": True,
-            "type": "string",
-        },
+    variables: list[Variable] = [
+        Variable("not_mandatory", "not mandatory", default="value"),
+        Variable("mandatory", "mandatory"),
+        Variable("mandatory_typed", "mandatory_typed", type="string"),
     ]
     lookup: str = "test"
     results = generate_inputs(variables, lookup)
@@ -314,17 +301,11 @@ inputs = {
     # mandatory_typed - mandatory_typed - required
     mandatory_typed = lookup(local.all.test, "mandatory_typed", "")
     # not_mandatory - not mandatory
-    not_mandatory = lookup(local.all.test, "not_mandatory", null)
+    not_mandatory = lookup(local.all.test, "not_mandatory", "value")
 }"""
     assert results == expected
 
-    variables.append(
-        {
-            "name": "nullable",
-            "description": "nullable",
-            "nullable": True,
-        }
-    )
+    variables.append(Variable("nullable", "nullable", default=None))
 
     results = generate_inputs(variables, lookup)
 
@@ -335,7 +316,7 @@ inputs = merge({
     # mandatory_typed - mandatory_typed - required
     mandatory_typed = lookup(local.all.test, "mandatory_typed", "")
     # not_mandatory - not mandatory
-    not_mandatory = lookup(local.all.test, "not_mandatory", null)
+    not_mandatory = lookup(local.all.test, "not_mandatory", "value")
 },
   # nullable - nullable
   (lookup(local.all.test, "nullable", null) == null ? {} : { nullable =  lookup(local.all.test, "nullable") })
@@ -345,11 +326,10 @@ inputs = merge({
 
 def test_generate_inputs_without_optional_merge_branch():
     # Regression: a module whose variables are only mandatory and nullable
-    # leaves `content_next` empty. Previously `content_next[-1]` raised
-    # IndexError in the merge({...}) branch.
-    variables: list = [
-        {"name": "mandatory", "description": "mandatory", "mandatory": True},
-        {"name": "znullable", "description": "nullable", "nullable": True},
+    # has no optional input. The merge({...}) branch must still render.
+    variables = [
+        Variable("mandatory", "mandatory"),
+        Variable("znullable", "nullable", default=None),
     ]
     results = generate_inputs(variables, "test")
 
@@ -359,16 +339,33 @@ def test_generate_inputs_without_optional_merge_branch():
 
 
 def test_generate_inputs_only_mandatory_plain_branch():
-    # Regression: only-mandatory variables leave both `content_next` and
-    # `content_nullable` empty, which used to crash the plain inputs = {...}
-    # branch on `content_next[-1]`.
-    variables: list = [
-        {"name": "mandatory", "description": "mandatory", "mandatory": True},
-    ]
+    # Regression: only-mandatory variables leave both the optional and the
+    # nullable inputs empty, which must render the plain inputs = {...} branch.
+    variables = [Variable("mandatory", "mandatory")]
     results = generate_inputs(variables, "test")
 
     assert results.startswith("\ninputs = {")
     assert 'mandatory = lookup(local.all.test, "mandatory", null)' in results
+
+
+def test_generate_inputs_renders_typed_and_untyped_defaults():
+    variables = [
+        Variable("count", "count", type="number", default=3),
+        Variable("name", "name", type="string", default="web"),
+        Variable("tags", "tags", default={"env": "dev"}),
+    ]
+    results = generate_inputs(variables, "test")
+
+    assert 'count = lookup(local.all.test, "count", 3)' in results
+    assert 'name = lookup(local.all.test, "name", "web")' in results
+    assert 'tags = lookup(local.all.test, "tags", {"env": "dev"})' in results
+
+
+def test_generate_inputs_flattens_multiline_descriptions():
+    variables = [Variable("a", 'first\n    second \\"quoted\\"')]
+    results = generate_inputs(variables, "test")
+
+    assert '# a - first\n    # second "quoted" - required\n' in results
 
 
 def test_generate_without_variable_key():
@@ -386,110 +383,6 @@ def test_generate_without_variable_key():
 
     assert "inputs = {" in results
     assert "enabled: true" in yaml
-
-
-def test_parse_variables():
-    variables: list = [
-        {
-            0: {
-                "name": "test",
-                "description": "A",
-                "type": "string",
-                "default": None,
-            },
-            1: {
-                "name": "test1",
-                "description": "A",
-                "type": "string",
-                "default": "hello",
-            },
-            2: {
-                "name": "test2",
-                "description": "A",
-                "type": "string",
-            },
-        }
-    ]
-
-    results = parse_variables(variables)
-
-    expected = (
-        [
-            {
-                "name": 0,
-                "description": "A",
-                "type": "string",
-                "default": None,
-                "mandatory": False,
-                "nullable": True,
-            },
-            {
-                "name": 1,
-                "description": "A",
-                "type": "string",
-                "default": "hello",
-                "mandatory": False,
-                "nullable": False,
-            },
-            {
-                "name": 2,
-                "description": "A",
-                "type": "string",
-                "mandatory": True,
-                "nullable": False,
-            },
-        ],
-        {
-            "mandatories": [
-                {
-                    "name": 2,
-                    "description": "A",
-                    "type": "string",
-                    "mandatory": True,
-                    "nullable": False,
-                }
-            ],
-            "optionals": [
-                {
-                    "name": 1,
-                    "description": "A",
-                    "type": "string",
-                    "default": "hello",
-                    "mandatory": False,
-                    "nullable": False,
-                }
-            ],
-            "nullables": [
-                {
-                    "name": 0,
-                    "description": "A",
-                    "type": "string",
-                    "default": None,
-                    "mandatory": False,
-                    "nullable": True,
-                }
-            ],
-        },
-    )
-
-    assert results == expected
-
-
-def test_parse_variables_without_type():
-    # A variable with no `type` key takes the False branch of the
-    # `v.get("type") is not None` guard, and with no `default` it is
-    # classified as a mandatory input.
-    variables: list = [{0: {"name": "test", "description": "A"}}]
-
-    outputs, grouped = parse_variables(variables)
-
-    assert outputs == [
-        {"name": 0, "description": "A", "mandatory": True, "nullable": False}
-    ]
-    assert "type" not in outputs[0]
-    assert grouped["mandatories"] == outputs
-    assert grouped["optionals"] == []
-    assert grouped["nullables"] == []
 
 
 def test_generate():
