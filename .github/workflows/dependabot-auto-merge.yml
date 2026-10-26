@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: dependabot-auto-merge
+
+# Queue Dependabot pull requests for auto-merge-signed once CI passed on the
+# rewritten, signed head. Major updates only get a notice: a maintainer adds the
+# auto-merge label to merge one. Only trusted code from main runs here.
+on:  # zizmor: ignore[dangerous-triggers] trusted code from main labels only
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  label:
+    name: queue dependabot pull request
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/') &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # The major-update notice is posted with the workflow token.
+      pull-requests: write
+    concurrency:
+      group: dependabot-auto-merge-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+      # The major-update notice appears under the maintainer account.
+      PR_WRITE_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+      GH_REPO: ${{ github.repository }}
+      MERGE_LABEL: auto-merge
+      RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+    steps:
+      - name: Checkout trusted code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Label the pull request when CI passed on its signed head
+        run: python3 scripts/ci_automation.py label-dependabot

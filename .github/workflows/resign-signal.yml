@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: resign-signal
+
+# A push to a pull request branch, except Dependabot's own pushes, which the
+# Dependabot rewrite handles. This job has no secrets and runs no PR code; it
+# only starts resign, which decides with trusted code from main.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  signal:
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout trusted summary script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: trusted
+          persist-credentials: false
+      - name: Signal a push to a pull request branch
+        run: echo "Pull request branch updated; resign checks its commit signatures."
+      - name: Job summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: >-
+          python3 trusted/scripts/ci_automation.py summary --title "Re-signing signal"
+          --body "Signals the trusted resign workflow; this job has read-only permissions."

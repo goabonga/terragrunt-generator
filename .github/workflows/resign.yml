@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024-2026 Chris <goabonga@pm.me>
+
+name: resign
+
+# Re-sign, in place, the commits of a pull request branch when someone with
+# write access pushed unsigned ones, such as GitHub's "Update branch" rebase.
+# workflow_run gives this job the signing key; it checks out the pull request
+# only to re-sign it with trusted code from main and never executes it.
+on:  # zizmor: ignore[dangerous-triggers]
+  workflow_run:
+    workflows: [resign-signal]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  resign:
+    name: re-sign pull request commits
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: resign-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    env:
+      GH_REPO: ${{ github.repository }}
+      LABELLER: ${{ github.event.workflow_run.triggering_actor.login }}
+    steps:
+      - name: Checkout trusted code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: trusted
+          persist-credentials: false
+      - name: Decide whether the branch needs re-signing
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+          SIGNAL_SHA: ${{ github.event.workflow_run.head_sha }}
+          SIGNAL_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: python3 trusted/scripts/ci_automation.py validate-resign
+      - name: Checkout the pushed commit
+        if: steps.pr.outputs.needed == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Configure the maintainer signing identity
+        if: steps.pr.outputs.needed == 'true'
+        working-directory: pr
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          PUSH_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+          GIT_USER_NAME: ${{ vars.GIT_USER_NAME }}
+          GIT_USER_EMAIL: ${{ vars.GIT_USER_EMAIL }}
+          GIT_SIGNING_KEY: ${{ vars.GIT_SIGNING_KEY }}
+        run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" configure-signing
+      - name: Re-sign every commit in place
+        if: steps.pr.outputs.needed == 'true'
+        working-directory: pr
+        run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" rebase --mode resign
+      - name: Push the re-signed commits with an explicit lease
+        if: steps.pr.outputs.needed == 'true'
+        working-directory: pr
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+          PR_WRITE_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_REF: ${{ github.event.workflow_run.head_branch }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" push --mode resign
+      - name: Remove signing credentials
+        if: always()
+        run: |
+          if [ -f trusted/scripts/ci_automation.py ]; then
+            python3 trusted/scripts/ci_automation.py cleanup
+          fi
+      - name: Job summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          GIT_USER_NAME: ${{ vars.GIT_USER_NAME }}
+          GIT_USER_EMAIL: ${{ vars.GIT_USER_EMAIL }}
+        run: python3 trusted/scripts/ci_automation.py summary --title "Pull request re-signing"
