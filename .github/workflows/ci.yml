@@ -82,18 +82,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-suffix: ${{ github.job }}
       - name: Check SPDX headers
         run: |
           {
-            uv run --no-project python scripts/add_license_header.py --path src --types py --check
-            uv run --no-project python scripts/add_license_header.py --path tests --types py --check
-            uv run --no-project python scripts/add_license_header.py --path scripts --types py --check
-            uv run --no-project python scripts/add_license_header.py --path .github --types yml --check
-            uv run --no-project python scripts/add_license_header.py --path . --types toml --check
+            python3 scripts/add_license_header.py --path src --types py --check
+            python3 scripts/add_license_header.py --path tests --types py --check
+            python3 scripts/add_license_header.py --path scripts --types py --check
+            python3 scripts/add_license_header.py --path .github --types yml --check
+            python3 scripts/add_license_header.py --path . --types toml --check
           } 2>&1 | tee headers.txt
       - name: Summarize license headers
         if: ${{ !cancelled() }}
@@ -450,7 +446,7 @@ jobs:
       - name: Install Zensical (doc group)
         run: uv sync --frozen --only-group doc
       - name: Build site
-        run: uv run zensical build --clean 2>&1 | tee zensical.txt
+        run: uv run --no-sync zensical build --clean 2>&1 | tee zensical.txt
       - name: Summarize site build
         if: ${{ !cancelled() }}
         env:
