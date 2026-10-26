@@ -143,13 +143,10 @@ inputs = {
 @patch("terragrunt_generator.git.Repo.clone_from")
 @patch("os.listdir", return_value=["test.tf"])
 @patch("builtins.open", new_callable=mock_open, read_data=data)
-@patch(
-    "terragrunt_generator.main.copy_terraform_module",
-    side_effect=Exception(b"Test exception message"),
-)
+@patch("terragrunt_generator.main.module_source")
 @patch("sys.exit")
 def test_main_repo_exception(
-    mock_exit, mock_copy_module, mock_git, mock_dir, mock_file, capsys
+    mock_exit, mock_module_source, mock_git, mock_dir, mock_file, capsys
 ):
     args = [
         "-u",
@@ -159,6 +156,9 @@ def test_main_repo_exception(
         "-l",
         "test",
     ]
+    mock_module_source.return_value.fetch.side_effect = Exception(
+        b"Test exception message"
+    )
 
     main(args)
 
@@ -168,12 +168,12 @@ def test_main_repo_exception(
     mock_exit.assert_called_once_with(1)
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("builtins.open", new_callable=mock_open)
 def test_main_local_with_output(
-    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+    mock_open_write, mock_makedirs, mock_read_dir, mock_module_source, tmp_path, capsys
 ):
     fake_tempdir = tmp_path / "mocked_temp"
     os.makedirs(fake_tempdir.as_posix(), exist_ok=True)
@@ -231,12 +231,12 @@ def test_main_module_importable():
     assert entry.main is main
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("builtins.open", new_callable=mock_open)
 def test_output_bare_filename_no_directory(
-    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+    mock_open_write, mock_makedirs, mock_read_dir, mock_module_source, tmp_path, capsys
 ):
     # A bare filename has no directory component, so write_hcl_file skips
     # os.makedirs (the False branch of `if output_dir`).
@@ -265,12 +265,12 @@ def test_output_bare_filename_no_directory(
     mock_makedirs.assert_not_called()
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("builtins.open", new_callable=mock_open)
 def test_output_explicit_file_path(
-    mock_open_write, mock_makedirs, mock_read_dir, mock_copy_module, tmp_path, capsys
+    mock_open_write, mock_makedirs, mock_read_dir, mock_module_source, tmp_path, capsys
 ):
     output_file = tmp_path / "terragrunt-custom.hcl"
 
@@ -300,7 +300,7 @@ def test_output_explicit_file_path(
     handle.write.assert_called()
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("os.path.isdir", return_value=True)
@@ -310,7 +310,7 @@ def test_output_directory_without_slash(
     mock_isdir,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
@@ -344,7 +344,7 @@ def test_output_directory_without_slash(
     handle.write.assert_called()
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("os.path.exists", return_value=True)
@@ -358,7 +358,7 @@ def test_yaml_output_merge_if_exists(
     mock_exists,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
@@ -408,7 +408,7 @@ def test_yaml_output_merge_if_exists(
     assert "r" in modes or "w" in modes
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("os.path.exists", return_value=False)
@@ -418,7 +418,7 @@ def test_yaml_output_new_file_creation(
     mock_exists,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
@@ -464,7 +464,7 @@ def test_yaml_output_new_file_creation(
     assert "w" in modes
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("os.path.exists", return_value=False)
@@ -474,7 +474,7 @@ def test_yaml_output_direct_file_without_env(
     mock_exists,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
@@ -516,7 +516,7 @@ def test_yaml_output_direct_file_without_env(
     assert "w" in modes
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("os.path.exists", return_value=False)
@@ -526,7 +526,7 @@ def test_yaml_output_file_with_env_creates_in_parent(
     mock_exists,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
@@ -572,7 +572,7 @@ def test_yaml_output_file_with_env_creates_in_parent(
     assert "w" in modes
 
 
-@patch("terragrunt_generator.main.copy_terraform_module")
+@patch("terragrunt_generator.main.module_source")
 @patch("terragrunt_generator.main.read_directory")
 @patch("os.makedirs")
 @patch("pathlib.Path.exists", return_value=True)  # <<< forcer exists() == True
@@ -586,7 +586,7 @@ def test_yaml_output_merge_existing_file(
     mock_exists,
     mock_makedirs,
     mock_read_dir,
-    mock_copy_module,
+    mock_module_source,
     tmp_path,
     capsys,
 ):
