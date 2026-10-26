@@ -119,6 +119,27 @@ jobs:
         run: |
           git push --force-with-lease origin "HEAD:$HEAD_REF"
 
+      - name: Retitle the pull request after its commits
+        # The title Dependabot chose carries its own type, which the
+        # rewrite may have changed (a runtime bump becomes fix(deps)).
+        # The title goes through the REST API: `gh pr edit` needs a
+        # token scope the workflow token does not have.
+        if: steps.gate.outputs.skip != 'true'
+        working-directory: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          TITLE=$(python3 "$GITHUB_WORKSPACE/trusted/scripts/rewrite_dependabot_commit.py" \
+            title "origin/$BASE_REF..HEAD")
+          if [ "$TITLE" != "$PR_TITLE" ]; then
+            gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --method PATCH --field title="$TITLE"
+          fi
+
       - name: Write step summary
         if: steps.gate.outputs.skip != 'true' && success()
         working-directory: pr
