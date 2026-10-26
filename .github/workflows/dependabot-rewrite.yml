@@ -32,14 +32,32 @@ jobs:
       group: dependabot-rewrite-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     steps:
-      - name: Check GPG availability
-        # Secrets can't be used inside `if:` directly, so we promote
-        # their presence to a step output and gate the rest on it.
+      - name: Decide whether the branch needs rewriting
+        # The rewrite re-authors the commits and the push, made with the
+        # merge token, starts this workflow again. Only a head commit
+        # still authored by Dependabot needs the rewrite: once it is
+        # re-authored the run stops, which ends the loop.
+        #
+        # Secrets can't be used inside `if:` directly, so their presence
+        # is promoted to a step output and the rest is gated on it.
         id: gate
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          AUTHOR=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq '.author.login')
+          if [ "$AUTHOR" != "dependabot[bot]" ]; then
+            {
+              echo "## Dependabot rewrite: skipped"
+              echo ""
+              echo "The head commit is no longer authored by Dependabot: already rewritten."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$GPG_PRIVATE_KEY" ] || [ -z "$GPG_PASSPHRASE" ]; then
             {
               echo "## Dependabot rewrite: skipped"
