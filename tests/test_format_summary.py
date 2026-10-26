@@ -355,3 +355,80 @@ def test_main_publish_reads_the_job_environment(
     monkeypatch.setenv("JOB_STATUS", "success")
     fs.main(["publish", str(dist), "--package", "demo", "--version", "1.2.3"])
     assert "releases/tag/1.2.3" in summary_file.read_text()
+
+
+def pyright_report(
+    *diagnostics: dict[str, Any], errors: int = 0, warnings: int = 0
+) -> Any:
+    return {
+        "generalDiagnostics": list(diagnostics),
+        "summary": {
+            "filesAnalyzed": 8,
+            "errorCount": errors,
+            "warningCount": warnings,
+            "timeInSec": 0.94,
+        },
+    }
+
+
+def diagnostic(
+    file: str = "src/a.py",
+    line: int = 3,
+    severity: str = "error",
+    rule: str | None = "reportX",
+) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "file": file,
+        "severity": severity,
+        "message": "first line\n  second line",
+        "range": {"start": {"line": line, "character": 0}},
+    }
+    if rule:
+        item["rule"] = rule
+    return item
+
+
+def test_pyright_without_diagnostics(report: Callable[[str, Any], str]) -> None:
+    text = fs.pyright_summary(report("p.json", pyright_report()))
+    assert text == "## ✅ pyright\n\nNo type error. 8 file(s) analysed in 0.9s.\n"
+
+
+def test_pyright_lists_the_diagnostics_by_file_and_line(
+    report: Callable[[str, Any], str],
+) -> None:
+    path = report(
+        "p.json",
+        pyright_report(
+            diagnostic("src/b.py", 1),
+            diagnostic("src/a.py", 9, rule=None),
+            diagnostic("src/a.py", 2),
+            errors=3,
+        ),
+    )
+    text = fs.pyright_summary(path)
+    assert text.startswith("## ❌ pyright\n\n3 error(s), 0 warning(s). 8 file(s)")
+    rows = text.splitlines()[-3:]
+    assert rows[0].startswith("| error | reportX | src/a.py:3 | first line |")
+    assert rows[1].startswith("| error |  | src/a.py:10 |")
+    assert rows[2].startswith("| error | reportX | src/b.py:2 |")
+    assert "second line" not in text
+
+
+def test_pyright_warnings_alone_are_not_a_failure(
+    report: Callable[[str, Any], str],
+) -> None:
+    path = report("p.json", pyright_report(diagnostic(severity="warning"), warnings=1))
+    assert fs.pyright_summary(path).startswith(
+        "## ⚠️ pyright\n\n0 error(s), 1 warning(s)"
+    )
+
+
+def test_pyright_without_a_report_says_so() -> None:
+    assert "No report was produced" in fs.pyright_summary("/nonexistent/p.json")
+
+
+def test_main_pyright_appends_its_summary(
+    report: Callable[[str, Any], str], summary_file: Path
+) -> None:
+    fs.main(["pyright", report("p.json", pyright_report())])
+    assert " pyright\n" in summary_file.read_text()
