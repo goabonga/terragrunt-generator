@@ -75,6 +75,27 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: python3 scripts/format_summary.py text mypy mypy.txt
 
+  # Second static type check, with pyright, on the public src/. mypy and
+  # pyright disagree on inference and narrowing, so each catches what the
+  # other lets through.
+  pyright:
+    name: pyright
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-suffix: ${{ github.job }}
+      - name: Sync
+        run: uv sync --frozen
+      - name: Type-check
+        run: uv run --no-sync pyright --outputjson > pyright.json
+      - name: Summarize pyright
+        if: ${{ !cancelled() }}
+        run: python3 scripts/format_summary.py pyright pyright.json
+
   # Verify the two-line SPDX header on every Python source and config.
   license-headers:
     name: license-headers
@@ -205,6 +226,7 @@ jobs:
     needs:
       - lint
       - type-check
+      - pyright
       - license-headers
       - test
       - bandit

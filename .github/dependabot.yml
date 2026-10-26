@@ -30,6 +30,7 @@ updates:
           - "ruff"
           - "mypy"
           - "pytest*"
+          - "pyright"
           - "pre-commit"
           - "zensical"
     commit-message:

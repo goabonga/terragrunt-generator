@@ -66,6 +66,7 @@ include = [
 dev = [
     "mypy>=1.18",
     "pre-commit>=4.0",
+    "pyright>=1.1.414",
     "pytest>=8.3",
     "pytest-cov>=6.0",
     "ruff>=0.13",
@@ -143,3 +144,12 @@ exclude = ["build/", "dist/", "site/", ".venv/"]
 [[tool.mypy.overrides]]
 module = ["hcl2.*"]
 ignore_missing_imports = true
+
+# pyright checks the public src/ as a second opinion next to mypy: the two
+# checkers disagree on inference and narrowing.
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
