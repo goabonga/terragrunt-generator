@@ -50,6 +50,13 @@ repos:
         pass_filenames: false
         args: [src]
         require_serial: true
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        files: ^src/.*\.py$
+        pass_filenames: false
+        require_serial: true
 
   # SPDX license headers. One hook per target path because the helper
   # script takes a single --path.
