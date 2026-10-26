@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.1.4] - 2026-10-26
+
+### Fixed
+
+- **deps**: bump python-hcl2 from 8.1.2 to 8.1.3 (`3ff4b43`)
+- **deps**: bump python-hcl2 from 8.1.3 to 8.1.4 (`11fda01`)
+- **deps**: bump gitpython from 3.1.61 to 3.2.1 (`a9f24e5`)
+
 ## [1.1.3] - 2026-09-04
 
 ### Fixed
