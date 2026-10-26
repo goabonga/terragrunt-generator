@@ -266,9 +266,10 @@ jobs:
         # Attribute the release commit to whoever pushed the head commit
         # that triggered CI, falling back to the github-actions[bot]
         # noreply identity when the payload carries no author.
+        env:
+          NAME: ${{ github.event.head_commit.author.name }}
+          EMAIL: ${{ github.event.head_commit.author.email }}
         run: |
-          NAME="${{ github.event.head_commit.author.name }}"
-          EMAIL="${{ github.event.head_commit.author.email }}"
           git config user.name  "${NAME:-github-actions[bot]}"
           git config user.email "${EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
       - name: Detect GPG availability
