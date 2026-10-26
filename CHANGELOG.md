@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.2.0] - 2026-10-26
+
+### Added
+
+- add the Variable dataclass and its parser (`f2c8e22`)
+- render the inputs and the yaml from Variable objects (`93245cd`)
+- add ModuleSource to describe where a module comes from (`6386cc1`)
+- describe the module with a ModuleSource in the generator (`50dd472`)
+- split main into small steps (`7735d94`)
+- merge YAML configs level by level with blocks (`6cf8ae3`)
+- assemble the generated HCL from its sections (`5186da2`)
+- keep the falsy defaults in the generated YAML (`049eee1`)
+- report a Terraform file that cannot be parsed (`1978eab`)
+- let an interruption stop the command (`98f9878`)
+- remove the temporary directory of the module (`6d23e8d`)
+- treat a yaml output ending with a slash as a directory (`bb1ae16`)
+- do not repeat a key whose value the user edited in the merge (`5749931`)
+
 ## [1.1.4] - 2026-10-26
 
 ### Fixed
