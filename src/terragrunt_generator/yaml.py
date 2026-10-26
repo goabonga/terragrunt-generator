@@ -2,6 +2,7 @@
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
 import json
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -62,6 +63,21 @@ def is_block_start(line: str, indent: int) -> bool:
     )
 
 
+COMMENTED_OPTION = re.compile(r"\s*#\s?(\w[\w.-]*):(?:\s|$)")
+
+
+def option_key(line: str) -> tuple[int, str] | None:
+    """The indent and name of a ``key: value`` line, commented out or not."""
+    stripped = line.lstrip()
+    indent = len(line) - len(stripped)
+    commented = COMMENTED_OPTION.match(line)
+    if commented:
+        return indent, commented.group(1)
+    if stripped.startswith("#") or ":" not in stripped:
+        return None
+    return indent, stripped.split(":", 1)[0]
+
+
 @dataclass
 class Block:
     """A key of a level and the lines below it, up to the next key of that level."""
@@ -93,7 +109,8 @@ def merge_level(a: list[str], b: list[str], indent: int) -> list[str]:
     """Merge the lines of ``b`` into those of ``a``, which keep their order and values.
 
     A key of both levels is merged one level down; a key of ``b`` only is added
-    after them, and so is any line of ``b`` that ``a`` does not hold yet.
+    after them, and so is any line of ``b`` that ``a`` does not hold yet, unless
+    ``a`` already sets that option, commented out or not, to a value of its own.
     """
     leading, blocks_a = split_level(a, indent)
     _, blocks_b = split_level(b, indent)
@@ -111,9 +128,16 @@ def merge_level(a: list[str], b: list[str], indent: int) -> list[str]:
         if key not in blocks_a:
             merged.extend(block.lines)
 
+    options = {option for option in map(option_key, merged) if option}
     for line in b:
-        if not is_block_start(line, indent) and line not in merged:
-            merged.append(line)
+        if is_block_start(line, indent) or line in merged:
+            continue
+        option = option_key(line)
+        if option in options:
+            continue
+        merged.append(line)
+        if option:
+            options.add(option)
 
     return merged
 
