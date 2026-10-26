@@ -113,7 +113,7 @@ def test_main_repo(mock_git, mock_dir, mock_file, capsys):
 # test:
 #   enabled: true
 #   # test - 
-#   # # test: 
+#   # # test: ""
 # ```
 #
 

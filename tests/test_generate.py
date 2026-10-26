@@ -40,7 +40,7 @@ def test_generate_header():
 #   # mandatories - mandatories
 #   mandatories: 
 #   # optionals - optionals
-#   # optionals: 
+#   # optionals: ""
 #   # nullables - nullables
 #   # nullables: 
 # ```
@@ -88,7 +88,7 @@ def test_generate_header_with_deep_lookup():
 #     # mandatories - mandatories
 #     mandatories: 
 #     # optionals - optionals
-#     # optionals: 
+#     # optionals: ""
 #     # nullables - nullables
 #     # nullables: 
 # ```
@@ -121,7 +121,7 @@ def test_generate_header_local_module():
 #   # mandatories - mandatories
 #   mandatories: 
 #   # optionals - optionals
-#   # optionals: 
+#   # optionals: ""
 #   # nullables - nullables
 #   # nullables: 
 # ```
@@ -154,7 +154,7 @@ def test_generate_header_module():
 #   # mandatories - mandatories
 #   mandatories: 
 #   # optionals - optionals
-#   # optionals: 
+#   # optionals: ""
 #   # nullables - nullables
 #   # nullables: 
 # ```
@@ -187,7 +187,7 @@ def test_generate_header_submodule():
 #   # mandatories - mandatories
 #   mandatories: 
 #   # optionals - optionals
-#   # optionals: 
+#   # optionals: ""
 #   # nullables - nullables
 #   # nullables: 
 # ```
@@ -221,7 +221,7 @@ def test_generate_header_nested_lookup():
 #     # mandatories - mandatories
 #     mandatories: 
 #     # optionals - optionals
-#     # optionals: 
+#     # optionals: ""
 #     # nullables - nullables
 #     # nullables: 
 # ```

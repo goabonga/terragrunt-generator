@@ -264,3 +264,31 @@ def test_merge_level_without_new_lines_changes_nothing():
 
     assert merge_level(lines, [], 0) == lines
     assert merge_level(lines, lines, 0) == lines
+
+
+@pytest.mark.parametrize(
+    ("default", "rendered"),
+    [
+        (False, "false"),
+        (0, "0"),
+        ("", '""'),
+        ([], "[]"),
+        ({}, "{}"),
+        (True, "true"),
+        (3, "3"),
+    ],
+)
+def test_get_yaml_keeps_the_falsy_defaults(default, rendered):
+    results = get_yaml("test", [Variable("flag", "a flag", default=default)])
+
+    assert f"  # flag: {rendered}\n" in results
+
+
+def test_get_yaml_leaves_the_mandatory_and_nullable_values_empty():
+    results = get_yaml(
+        "test",
+        [Variable("required", "r"), Variable("nullable", "n", default=None)],
+    )
+
+    assert "  required: \n" in results
+    assert "  # nullable: \n" in results

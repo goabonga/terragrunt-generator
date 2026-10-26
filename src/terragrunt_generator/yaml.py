@@ -32,7 +32,7 @@ def get_yaml(name: str, variables: Sequence[Variable], is_enabled: bool = True) 
             commented = "# " if kind is not VariableKind.MANDATORY else ""
             text += (
                 f"{indent}{commented}{variable.name}: "
-                f"{json.dumps(default) if default else ''}\n"
+                f"{'' if default is None else json.dumps(default)}\n"
             )
 
     nested_yaml = ""
