@@ -10,7 +10,7 @@ name: auto-merge-signed
 # code from main runs here, PR code is never executed.
 on:  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
-    branches: [main]
+    branches: [main, "issue-*"]
     types: [labeled]
 
 permissions:
@@ -42,6 +42,7 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
       HEAD_REF: ${{ github.event.pull_request.head.ref }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
       LABELLER: ${{ github.event.sender.login }}
     steps:
       - name: Checkout trusted code

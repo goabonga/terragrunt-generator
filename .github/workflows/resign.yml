@@ -66,6 +66,8 @@ jobs:
       - name: Re-sign every commit in place
         if: steps.pr.outputs.needed == 'true'
         working-directory: pr
+        env:
+          BASE_BRANCH: ${{ steps.pr.outputs.base }}
         run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" rebase --mode resign
       - name: Push the re-signed commits with an explicit lease
         if: steps.pr.outputs.needed == 'true'
@@ -74,6 +76,7 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
           PR_WRITE_TOKEN: ${{ secrets.AUTO_MERGE_PAT }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
+          BASE_BRANCH: ${{ steps.pr.outputs.base }}
           HEAD_REF: ${{ github.event.workflow_run.head_branch }}
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" push --mode resign

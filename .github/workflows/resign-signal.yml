@@ -8,7 +8,7 @@ name: resign-signal
 # only starts resign, which decides with trusted code from main.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, "issue-*"]
     types: [opened, synchronize, reopened]
 
 permissions:

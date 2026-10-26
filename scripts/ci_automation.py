@@ -30,6 +30,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 RELEASE_BRANCH = "main"
+# A pull request may target main, or the branch collecting the work of an
+# issue, whose sub-issue branches merge into it before it reaches main.
+ISSUE_BRANCH_PREFIX = "issue-"
 MERGE_JOB_PREFIX = "merge into "
 SIGNING_HOME_PREFIX = "ci-signing-"
 MAJOR_UPDATE = "update-type: version-update:semver-major"
@@ -116,6 +119,19 @@ def pr_write_token():
             "PR_WRITE_TOKEN is required to comment on or relabel the pull request"
         )
     return token
+
+
+def mergeable_base(branch):
+    """True for a branch pull requests may be merged into: main or an issue branch."""
+    return branch == RELEASE_BRANCH or branch.startswith(ISSUE_BRANCH_PREFIX)
+
+
+def base_branch():
+    """The branch this run merges into, as recorded when the label was added."""
+    base = os.environ.get("BASE_REF") or RELEASE_BRANCH
+    if not mergeable_base(base):
+        raise ValueError(f"The merge queue does not merge into {base}")
+    return base
 
 
 def open_pulls(branch):
@@ -256,7 +272,7 @@ def merge_authorized(pr, sha):
         and (pr["head"]["repo"] or {}).get("full_name") == repository()
         and pr["head"]["sha"] == sha
         and head == os.environ["HEAD_REF"]
-        and pr["base"]["ref"] == RELEASE_BRANCH
+        and pr["base"]["ref"] == base_branch()
         # main only ever moves forward.
         and head != RELEASE_BRANCH
         and any(label["name"] == os.environ["MERGE_LABEL"] for label in pr["labels"])
@@ -352,12 +368,12 @@ def cleanup():
 def rebase(mode):
     git("config", "core.hooksPath", "/dev/null")
     if mode == "merge":
-        git("fetch", "origin", RELEASE_BRANCH)
-        base = git("rev-parse", f"origin/{RELEASE_BRANCH}")
+        git("fetch", "origin", base_branch())
+        base = git("rev-parse", f"origin/{base_branch()}")
         Path(os.environ["RUNNER_TEMP"], "merge-base-sha").write_text(base)
     else:
         # Same base, same order: only the signatures and identity change.
-        base = git("merge-base", f"origin/{RELEASE_BRANCH}", "HEAD")
+        base = git("merge-base", f"origin/{resign_base()}", "HEAD")
     if git("rev-list", "--merges", f"{base}..HEAD"):
         raise ValueError("Merge commits cannot be automatically replayed")
     script = Path(__file__).with_name("sign_commit.py")
@@ -402,7 +418,7 @@ def push_signed(mode):
         and (pr["head"]["repo"] or {}).get("full_name") == repository()
         and pr["head"]["sha"] == sha
         and pr["head"]["ref"] == branch
-        and pr["base"]["ref"] == RELEASE_BRANCH
+        and pr["base"]["ref"] == resign_base()
     ):
         raise ValueError("Pull request changed while its commits were re-signed")
     check_labeller()
@@ -424,6 +440,14 @@ def push_signed(mode):
         )
 
 
+def resign_base():
+    """The base of the pull request being re-signed, decided by validate-resign."""
+    base = os.environ["BASE_BRANCH"]
+    if not mergeable_base(base):
+        raise ValueError(f"Pull requests into {base} are not re-signed")
+    return base
+
+
 def validate_resign():
     """Decide whether a push to a pull request branch needs its commits re-signed.
 
@@ -437,7 +461,7 @@ def validate_resign():
     pulls = [
         pull
         for pull in open_pulls(branch)
-        if branch != RELEASE_BRANCH and pull["base"]["ref"] == RELEASE_BRANCH
+        if branch != RELEASE_BRANCH and mergeable_base(pull["base"]["ref"])
     ]
     if len(pulls) != 1 or pulls[0]["head"]["sha"] != sha:
         print("The pushed commit is no longer the head of an open pull request")
@@ -445,6 +469,7 @@ def validate_resign():
         return
     number = pulls[0]["number"]
     output("number", number)
+    output("base", pulls[0]["base"]["ref"])
     unsigned = [
         commit["sha"][:7] for commit in commits_of(number) if not verified(commit)
     ]
@@ -457,15 +482,23 @@ def validate_resign():
     output("needed", "true")
 
 
-def required_checks():
-    """The status checks the active rulesets require on main before merging."""
-    rules = api(f"repos/{repository()}/rules/branches/{RELEASE_BRANCH}") or []
-    return {
-        check["context"]
-        for rule in rules
-        if rule["type"] == "required_status_checks"
-        for check in rule["parameters"]["required_status_checks"]
-    }
+def required_checks(base=None):
+    """The status checks the active rulesets require before merging into ``base``.
+
+    An issue branch has no ruleset of its own, so it requires what main does:
+    the checks that would have to pass when the issue reaches main.
+    """
+    for branch in dict.fromkeys([base or base_branch(), RELEASE_BRANCH]):
+        rules = api(f"repos/{repository()}/rules/branches/{quote(branch, safe='')}")
+        checks = {
+            check["context"]
+            for rule in rules or []
+            if rule["type"] == "required_status_checks"
+            for check in rule["parameters"]["required_status_checks"]
+        }
+        if checks:
+            return checks
+    return set()
 
 
 def checks_ready(runs, statuses, required):
@@ -529,21 +562,25 @@ def wait_checks(signed=False):
     raise TimeoutError("Timed out waiting for CI; re-apply the auto-merge label")
 
 
-def queue_ahead(number):
+def queue_ahead(number, base=None):
     """Return the labelled pull requests queued before ``number``, oldest first.
 
+    Only pull requests into the same base compete: each base moves on its own.
     The queue order is the time of each pull request's latest auto-merge label,
     so removing and re-applying the label moves a pull request to the back.
     """
     label = os.environ["MERGE_LABEL"]
+    branch = quote(base or base_branch(), safe="")
     pages = api(
-        f"repos/{repository()}/issues?state=open&labels={quote(label, safe='')}&per_page=100",
+        f"repos/{repository()}/pulls?state=open&base={branch}&per_page=100",
         paginate=True,
     )
     queued = []
-    for issue in (issue for page in pages for issue in page if "pull_request" in issue):
+    for pull in (pull for page in pages for pull in page):
+        if not any(item["name"] == label for item in pull["labels"]):
+            continue
         events = api(
-            f"repos/{repository()}/issues/{issue['number']}/events?per_page=100",
+            f"repos/{repository()}/issues/{pull['number']}/events?per_page=100",
             paginate=True,
         )
         labelled = [
@@ -554,7 +591,7 @@ def queue_ahead(number):
             and (event.get("label") or {}).get("name") == label
         ]
         if labelled:
-            queued.append((max(labelled), issue["number"]))
+            queued.append((max(labelled), pull["number"]))
     order = [entry for _, entry in sorted(queued)]
     return order[: order.index(number)] if number in order else order
 
@@ -584,9 +621,10 @@ def wait_turn(poll=30, limit=5 * 60 * 60):
                 + " ahead in the merge queue"
             )
         else:
-            pending = pending_release(directory)
+            # Releases are cut from main only; an issue branch has none.
+            pending = pending_release(directory) if base_branch() == RELEASE_BRANCH else []
             if not pending:
-                print(f"First in the merge queue and {RELEASE_BRANCH} can move")
+                print(f"First in the merge queue and {base_branch()} can move")
                 return
             print(f"Waiting for the release of {', '.join(pending)} on {RELEASE_BRANCH}")
         time.sleep(poll)
@@ -598,16 +636,17 @@ def merge():
     if not merge_authorized(pull_request(), sha):
         raise ValueError("Pull request changed or merge authorization was removed")
     check_labeller()
-    git("fetch", "origin", RELEASE_BRANCH)
+    base = base_branch()
+    git("fetch", "origin", base)
     recorded = Path(os.environ["RUNNER_TEMP"], "merge-base-sha").read_text()
-    if git("rev-parse", f"origin/{RELEASE_BRANCH}") != recorded:
-        raise ValueError(f"{RELEASE_BRANCH} advanced; re-apply the auto-merge label")
-    authenticated_git("push", "origin", f"HEAD:refs/heads/{RELEASE_BRANCH}")
+    if git("rev-parse", f"origin/{base}") != recorded:
+        raise ValueError(f"{base} advanced; re-apply the auto-merge label")
+    authenticated_git("push", "origin", f"HEAD:refs/heads/{base}")
     api(
         f"repos/{repository()}/issues/{pr_number()}/comments",
         "POST",
         {
-            "body": f"Merged into `{RELEASE_BRANCH}` as `{sha}`, GPG-signed with the maintainer key. "
+            "body": f"Merged into `{base}` as `{sha}`, GPG-signed with the maintainer key. "
             "History stays linear."
         },
         token=pr_write_token(),
