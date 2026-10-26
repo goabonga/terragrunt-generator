@@ -7,7 +7,7 @@ import importlib.util
 import subprocess
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import pytest
 
@@ -425,9 +425,28 @@ def test_merging_fast_forwards_main_and_comments(tmp_path: Path) -> None:
         patch.object(ci, "api") as client,
     ):
         ci.merge()
-    push.assert_called_once_with("push", "origin", "HEAD:refs/heads/main")
+    assert push.call_args_list == [
+        call("push", "origin", "HEAD:refs/heads/main"),
+        call("push", "origin", "--delete", "feature/x"),
+    ]
     assert "Merged into `main`" in client.call_args.args[2]["body"]
     assert client.call_args.kwargs["token"] == "token"
+
+
+def test_the_merged_branch_is_never_main_nor_the_base() -> None:
+    with patch.object(ci, "authenticated_git") as push:
+        ci.delete_merged_branch("main", "issue-1-x")
+        ci.delete_merged_branch("issue-1-x", "issue-1-x")
+    push.assert_not_called()
+
+
+def test_a_failed_branch_deletion_does_not_fail_the_merge(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    failure = subprocess.CalledProcessError(1, "git")
+    with patch.object(ci, "authenticated_git", side_effect=failure):
+        ci.delete_merged_branch("feature/x", "main")
+    assert "Could not delete the merged branch feature/x" in capsys.readouterr().out
 
 
 def test_pushing_a_merge_leases_the_validated_head() -> None:
@@ -765,7 +784,10 @@ def test_merging_fast_forwards_the_issue_branch(
         patch.object(ci, "api") as client,
     ):
         ci.merge()
-    push.assert_called_once_with("push", "origin", f"HEAD:refs/heads/{ISSUE}")
+    assert push.call_args_list == [
+        call("push", "origin", f"HEAD:refs/heads/{ISSUE}"),
+        call("push", "origin", "--delete", "feature/x"),
+    ]
     assert f"Merged into `{ISSUE}`" in client.call_args.args[2]["body"]
 
 

@@ -631,6 +631,16 @@ def wait_turn(poll=30, limit=5 * 60 * 60):
     raise TimeoutError("Timed out waiting in the merge queue")
 
 
+def delete_merged_branch(head, base):
+    """Delete the merged head branch; a failure never fails the merge."""
+    if head in {base, RELEASE_BRANCH}:
+        return
+    try:
+        authenticated_git("push", "origin", "--delete", head)
+    except subprocess.CalledProcessError:
+        print(f"::warning::Could not delete the merged branch {head}")
+
+
 def merge():
     sha = git("rev-parse", "HEAD")
     if not merge_authorized(pull_request(), sha):
@@ -651,6 +661,7 @@ def merge():
         },
         token=pr_write_token(),
     )
+    delete_merged_branch(os.environ["HEAD_REF"], base)
 
 
 def summary(title, body=""):
