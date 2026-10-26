@@ -2,12 +2,14 @@
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from terragrunt_generator.main import (
     build_parser,
     config_filename,
+    main,
     write_hcl_file,
     write_yaml,
     yaml_target,
@@ -126,3 +128,29 @@ def test_write_hcl_file_writes_a_file_output_as_given(tmp_path: Path):
     write_hcl_file(str(tmp_path / "x" / "my.hcl"), "content")
 
     assert (tmp_path / "x" / "my.hcl").read_text() == "content"
+
+
+def run_main(tmp_path: Path, fetch_error: BaseException | None = None) -> None:
+    with (
+        patch(
+            "terragrunt_generator.main.create_working_directory",
+            return_value=str(tmp_path / "work"),
+        ),
+        patch("terragrunt_generator.main.module_source") as source,
+        patch("terragrunt_generator.main.read_directory", return_value={}),
+    ):
+        source.return_value.fetch.side_effect = fetch_error
+        main(["-u", "https://gitserver.com/test/test.git", "-l", "test"])
+
+
+def test_an_interruption_is_not_swallowed(tmp_path: Path):
+    with pytest.raises(KeyboardInterrupt):
+        run_main(tmp_path, fetch_error=KeyboardInterrupt())
+
+
+def test_a_failure_to_fetch_the_module_exits_with_its_message(tmp_path: Path, capsys):
+    with pytest.raises(SystemExit) as exit_:
+        run_main(tmp_path, fetch_error=Exception("no such repository"))
+
+    assert exit_.value.code == 1
+    assert capsys.readouterr().out == "no such repository\n"
