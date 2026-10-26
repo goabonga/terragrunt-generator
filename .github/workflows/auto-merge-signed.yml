@@ -104,7 +104,7 @@ jobs:
         env:
           CHECKS_TOKEN: ${{ github.token }}
         run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" wait --signed
-      - name: Fast-forward main after checks
+      - name: Fast-forward the base branch after checks
         working-directory: pr
         run: python3 "$GITHUB_WORKSPACE/trusted/scripts/ci_automation.py" merge
       - name: Remove signing credentials
