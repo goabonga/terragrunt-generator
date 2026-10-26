@@ -114,7 +114,8 @@ def yaml_target(output: str, env: str | None) -> Path:
     a file is used as given, unless an environment renames it next to itself.
     """
     path = Path(output)
-    if path.is_dir() or str(path).endswith("/"):
+    # Path drops a trailing slash, so it is read from the argument itself.
+    if path.is_dir() or output.endswith("/"):
         return path / (f"config.{env}.yaml" if env else "config.yaml")
     if env:
         return path.parent / f"config.{env}.yaml"

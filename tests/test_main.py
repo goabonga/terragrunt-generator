@@ -130,6 +130,13 @@ def test_write_hcl_file_writes_a_file_output_as_given(tmp_path: Path):
     assert (tmp_path / "x" / "my.hcl").read_text() == "content"
 
 
+def test_a_directory_that_does_not_exist_yet_is_recognised_by_its_slash(tmp_path: Path):
+    assert yaml_target(f"{tmp_path}/new/", None) == tmp_path / "new" / "config.yaml"
+    assert (
+        yaml_target(f"{tmp_path}/new/", "dev") == tmp_path / "new" / "config.dev.yaml"
+    )
+
+
 def run_main(tmp_path: Path, fetch_error: BaseException | None = None) -> Path:
     work = tmp_path / "work"
     work.mkdir()
