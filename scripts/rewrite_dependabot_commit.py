@@ -13,10 +13,15 @@ The type reflects what the bump affects:
 Runtime is decided by membership in [project].dependencies of
 pyproject.toml; anything else (dependency groups, transitive tooling
 dependencies) is not shipped. Run by `git rebase --exec` in dependabot-rewrite.yml.
+
+The `title` command prints the pull request title matching the rewritten
+commits, so the title and the history agree on the type.
 """
 
+import os
 import re
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
@@ -58,20 +63,47 @@ def commit_type(changed: list[str], text: str) -> str:
 def rewrite(changed: list[str], subject: str, body: str) -> str:
     """The Conventional Commit message of a Dependabot commit."""
     text = LEADING_TYPE.sub("", subject)
-    body = "\n".join(line for line in body.splitlines() if not TRAILER.match(line)).strip()
+    body = "\n".join(
+        line for line in body.splitlines() if not TRAILER.match(line)
+    ).strip()
     message = f"{commit_type(changed, text)}: {text}"
     return f"{message}\n\n{body}" if body else message
+
+
+def pull_request_title(title: str, subjects: list[str]) -> str:
+    """The pull request title, typed like the rewritten commits.
+
+    A single commit gives its subject; a group of commits keeps the title
+    text under the type of its first commit.
+    """
+    if len(subjects) == 1:
+        return subjects[0]
+    typed = LEADING_TYPE.match(subjects[0]) if subjects else None
+    if typed is None:
+        return title
+    return f"{typed.group(0)}{LEADING_TYPE.sub('', title)}"
+
+
+def print_title(commit_range: str) -> None:
+    subjects = git("log", "--reverse", "--pretty=%s", commit_range).splitlines()
+    print(pull_request_title(os.environ["PR_TITLE"], subjects))
 
 
 def main() -> None:
     changed = git("show", "--name-only", "--pretty=", "HEAD").splitlines()
     message = rewrite(
-        changed, git("log", "-1", "--pretty=%s", "HEAD"), git("log", "-1", "--pretty=%b", "HEAD")
+        changed,
+        git("log", "-1", "--pretty=%s", "HEAD"),
+        git("log", "-1", "--pretty=%b", "HEAD"),
     )
     _ = subprocess.run(
-        ["git", "commit", "--amend", "--reset-author", "-m", message, "--quiet"], check=True
+        ["git", "commit", "--amend", "--reset-author", "-m", message, "--quiet"],
+        check=True,
     )
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == ["title"]:
+        print_title(sys.argv[2])
+    else:
+        main()
