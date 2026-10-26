@@ -4,7 +4,14 @@
 import pytest
 
 from terragrunt_generator.variables import Variable
-from terragrunt_generator.yaml import format_description, get_yaml, merge_yaml_strings
+from terragrunt_generator.yaml import (
+    Block,
+    format_description,
+    get_yaml,
+    merge_level,
+    merge_yaml_strings,
+    split_level,
+)
 
 
 @pytest.mark.parametrize(
@@ -177,3 +184,83 @@ def test_merge_yaml_strings_with_same_content():
       value: 123"""
 
     assert result.strip() == expected.strip()
+
+
+def test_split_level_separates_the_leading_lines_from_the_blocks():
+    lines = ["# note", "x: 1", "a:", "  # inside", "  y: 2", "b:", "  z: 3"]
+
+    leading, blocks = split_level(lines, 0)
+
+    assert leading == ["# note", "x: 1"]
+    assert list(blocks) == ["a:", "b:"]
+    assert blocks["a:"] == Block("a:", ["  # inside", "  y: 2"])
+    assert blocks["b:"].lines == ["b:", "  z: 3"]
+
+
+def test_split_level_only_keys_a_level_at_its_indent():
+    leading, blocks = split_level(["  a:", "    b:", "  c:"], 2)
+
+    assert leading == []
+    assert list(blocks) == ["a:", "c:"]
+    assert blocks["a:"].body == ["    b:"]
+
+
+def test_split_level_ignores_commented_keys_and_scalars():
+    leading, blocks = split_level(["# a:", "b: 1", "c:"], 0)
+
+    assert leading == ["# a:", "b: 1"]
+    assert list(blocks) == ["c:"]
+
+
+def test_split_level_keeps_the_scalars_that_follow_a_block_with_it():
+    _, blocks = split_level(["a:", "  b:", "    x: 1", "  y: 2"], 0)
+
+    assert blocks["a:"].body == ["  b:", "    x: 1", "  y: 2"]
+
+
+def test_merge_level_keeps_the_values_of_the_existing_lines():
+    merged = merge_level(["a:", "  x: kept"], ["a:", "  x: replaced"], 0)
+
+    assert "  x: kept" in merged
+    assert "  x: replaced" in merged
+    assert merged.index("  x: kept") < merged.index("  x: replaced")
+
+
+def test_merge_level_merges_the_keys_of_both_levels_one_level_down():
+    merged = merge_level(
+        ["a:", "  b:", "    x: 1"], ["a:", "  c:", "    y: 2", "  b:", "    # new"], 0
+    )
+
+    assert merged == [
+        "a:",
+        "  b:",
+        "    x: 1",
+        "    # new",
+        "  c:",
+        "    y: 2",
+    ]
+
+
+def test_merge_level_appends_the_keys_that_only_the_new_lines_hold():
+    merged = merge_level(["a:", "  x: 1"], ["b:", "  y: 2"], 0)
+
+    assert merged == ["a:", "  x: 1", "b:", "  y: 2"]
+
+
+def test_merge_level_keeps_the_leading_lines_of_the_existing_ones_first():
+    merged = merge_level(["# note", "a:"], ["b:"], 0)
+
+    assert merged == ["# note", "a:", "b:"]
+
+
+def test_merge_level_adds_a_new_line_once():
+    merged = merge_level(["a:"], ["a:", "  # new", "  # new"], 0)
+
+    assert merged == ["a:", "  # new"]
+
+
+def test_merge_level_without_new_lines_changes_nothing():
+    lines = ["# note", "a:", "  b:", "    x: 1"]
+
+    assert merge_level(lines, [], 0) == lines
+    assert merge_level(lines, lines, 0) == lines
