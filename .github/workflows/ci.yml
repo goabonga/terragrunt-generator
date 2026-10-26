@@ -218,6 +218,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # The main-protection ruleset only lets the maintainer push the
+          # release commit and its tag; the workflow token cannot bypass it.
+          token: ${{ secrets.AUTO_MERGE_PAT || github.token }}
           persist-credentials: true
       - uses: astral-sh/setup-uv@v7
         with:
