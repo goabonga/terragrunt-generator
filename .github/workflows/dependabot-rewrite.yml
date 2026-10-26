@@ -24,7 +24,7 @@ jobs:
   rewrite:
     name: rewrite dependabot commits
     if: github.actor == 'dependabot[bot]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: dependabot-rewrite-${{ github.event.pull_request.number }}
       cancel-in-progress: true

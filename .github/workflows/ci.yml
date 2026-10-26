@@ -33,7 +33,7 @@ jobs:
   lint:
     name: lint
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -58,7 +58,7 @@ jobs:
   type-check:
     name: type-check
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -79,7 +79,7 @@ jobs:
   license-headers:
     name: license-headers
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -103,7 +103,7 @@ jobs:
   test:
     name: test
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -144,7 +144,7 @@ jobs:
   bandit:
     name: bandit
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -161,7 +161,7 @@ jobs:
   pip-audit:
     name: pip-audit
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
@@ -182,7 +182,7 @@ jobs:
   osv-scanner:
     name: osv-scanner
     if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Install OSV-Scanner
@@ -215,7 +215,7 @@ jobs:
       - pip-audit
       - osv-scanner
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -332,7 +332,7 @@ jobs:
       && github.ref == 'refs/heads/main'
       && needs.release.result == 'success'
       && needs.release.outputs.package_bumped == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: pypi
       url: https://pypi.org/project/terragrunt-generator/
@@ -405,7 +405,7 @@ jobs:
       && github.event_name == 'push'
       && github.ref == 'refs/heads/main'
       && needs.release.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
