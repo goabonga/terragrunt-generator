@@ -3,14 +3,13 @@
 
 import json
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 from terragrunt_generator.variables import Variable, VariableKind
 
 
 def format_description(description: str, indent: str) -> str:
     lines = description.replace('\\"', '"').split("\n")
-    # if not lines:
-    #     return ''
     formatted = lines[0]
     if len(lines) > 1:
         for line in lines[1:]:
@@ -63,55 +62,57 @@ def is_block_start(line: str, indent: int) -> bool:
     )
 
 
-def split_blocks(
-    lines: list[str], indent: int
-) -> tuple[dict[str, list[str]], list[str]]:
-    blocks, order, i = {}, [], 0
-    while i < len(lines):
-        if is_block_start(lines[i], indent):
-            key = lines[i].strip()
-            start = i
-            i += 1
-            while i < len(lines) and not is_block_start(lines[i], indent):
-                i += 1
-            blocks[key] = lines[start:i]
-            order.append(key)
-        else:
-            i += 1
-    return blocks, order
+@dataclass
+class Block:
+    """A key of a level and the lines below it, up to the next key of that level."""
+
+    header: str
+    body: list[str] = field(default_factory=list[str])
+
+    @property
+    def lines(self) -> list[str]:
+        return [self.header, *self.body]
 
 
-def merge_block_lines(a: list[str], b: list[str], indent: int) -> list[str]:
-    blocks_a, order_a = split_blocks(a, indent)
-    blocks_b, order_b = split_blocks(b, indent)
-
-    merged, done = [], set()
-    i = 0
-    while i < len(a):
-        line = a[i]
+def split_level(lines: list[str], indent: int) -> tuple[list[str], dict[str, Block]]:
+    """The lines before the first key of a level, and the blocks of its keys."""
+    leading: list[str] = []
+    blocks: dict[str, Block] = {}
+    current: Block | None = None
+    for line in lines:
         if is_block_start(line, indent):
-            key = line.strip()
-            block_a = blocks_a[key]
-            if key in blocks_b:
-                block_b = blocks_b[key]
-                merged_sub = merge_block_lines(block_a[1:], block_b[1:], indent + 2)
-                merged.extend([block_a[0], *merged_sub])
-                done.add(key)
-            else:
-                merged.extend(block_a)
-            i += len(block_a)
+            current = blocks[line.strip()] = Block(line)
+        elif current is None:
+            leading.append(line)
         else:
-            merged.append(line)
-            i += 1
+            current.body.append(line)
+    return leading, blocks
 
-    for key in order_b:
-        if key not in done and key not in blocks_a:
-            merged.extend(blocks_b[key])
+
+def merge_level(a: list[str], b: list[str], indent: int) -> list[str]:
+    """Merge the lines of ``b`` into those of ``a``, which keep their order and values.
+
+    A key of both levels is merged one level down; a key of ``b`` only is added
+    after them, and so is any line of ``b`` that ``a`` does not hold yet.
+    """
+    leading, blocks_a = split_level(a, indent)
+    _, blocks_b = split_level(b, indent)
+
+    merged = list(leading)
+    for key, block in blocks_a.items():
+        merged.append(block.header)
+        other = blocks_b.get(key)
+        if other is None:
+            merged.extend(block.body)
+        else:
+            merged.extend(merge_level(block.body, other.body, indent + 2))
+
+    for key, block in blocks_b.items():
+        if key not in blocks_a:
+            merged.extend(block.lines)
 
     for line in b:
-        if is_block_start(line, indent):
-            continue
-        if line not in merged:
+        if not is_block_start(line, indent) and line not in merged:
             merged.append(line)
 
     return merged
@@ -122,5 +123,5 @@ def merge_yaml_strings(yaml1: str, yaml2: str) -> str:
     header1, body1 = extract_header(lines1)
     _, body2 = extract_header(lines2)
 
-    merged_body = merge_block_lines(body1, body2, indent=0)
+    merged_body = merge_level(body1, body2, indent=0)
     return "\n".join(header1 + [""] + merged_body)
