@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
-import contextlib
 import os
+import sys
 from typing import Any
 
 import hcl2
@@ -34,6 +34,9 @@ def read_directory(path: str) -> dict[str, Any]:
     datas: dict[str, Any] = {}
     for file in os.listdir(path):
         if file.endswith(".tf"):
-            with contextlib.suppress(Exception):
+            try:
                 datas = datas | read_file(f"{path}/{file}")
+            except Exception as error:
+                # The other files still describe the module: report and go on.
+                print(f"warning: skipped {file}: {error}", file=sys.stderr)
     return datas

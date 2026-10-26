@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 from terragrunt_generator.reader import read_directory, read_file
@@ -73,3 +74,16 @@ def test_read_directory_except(mock_file, mock_directory):
     mock_directory.assert_called_with(path)
     mock_file.assert_called_with(f"{path}/test.tf")
     assert results == {}
+
+
+def test_read_directory_reports_a_file_it_cannot_parse(tmp_path: Path, capsys):
+    (tmp_path / "good.tf").write_text(data)
+    (tmp_path / "broken.tf").write_text('variable "x" {')
+
+    results = read_directory(str(tmp_path))
+
+    assert results == {"variable": [{"test": {"default": "", "type": "string"}}]}
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "broken.tf" in captured.err
+    assert "good.tf" not in captured.err
