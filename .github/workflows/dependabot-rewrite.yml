@@ -81,7 +81,7 @@ jobs:
           git config user.signingkey "$KEY_ID"
           git config commit.gpgsign true
 
-      - name: Rewrite commits with scope-aware messages
+      - name: Rewrite commits as Conventional Commits
         if: steps.gate.outputs.skip != 'true'
         run: |
           set -euo pipefail
@@ -91,7 +91,7 @@ jobs:
           # the new HEAD after every pick, reclassifying scope by file
           # changes and amending with --reset-author and a GPG signature.
           git rebase "$BASE_SHA" \
-            --exec "scripts/rewrite-dependabot-commit.sh"
+            --exec "python3 scripts/rewrite_dependabot_commit.py"
 
       - name: Force-push rewritten branch
         if: steps.gate.outputs.skip != 'true'
@@ -107,6 +107,6 @@ jobs:
             echo ""
             echo "PR branch \`${{ github.event.pull_request.head.ref }}\` rewritten:"
             echo ""
-            echo "- Conventional-commits scope inferred from changed files"
+            echo "- Conventional Commit type inferred: \`ci\`, \`fix(deps)\` (runtime) or \`chore(deps)\` (dev)"
             echo "- Authored and GPG-signed as \`$(git config user.name) <$(git config user.email)>\`"
           } >> "$GITHUB_STEP_SUMMARY"
