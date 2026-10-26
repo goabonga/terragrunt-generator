@@ -26,4 +26,4 @@ uv run terragrunt-generator --help
 ```
 
 See [CONTRIBUTING.md](https://github.com/goabonga/terragrunt-generator/blob/main/CONTRIBUTING.md)
-for the development workflow (ruff, mypy, pytest, pre-commit).
+for the development workflow (ruff, mypy, pyright, pytest, pre-commit).

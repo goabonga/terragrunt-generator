@@ -18,8 +18,8 @@ cd terragrunt-generator
 uv sync
 
 # Install the pre-commit and commit-msg hooks (runs ruff check/format,
-# mypy strict, SPDX header checks, and Conventional Commits validation
-# before each commit lands).
+# mypy strict, pyright, SPDX header checks, and Conventional Commits
+# validation before each commit lands).
 uv run pre-commit install
 ```
 
