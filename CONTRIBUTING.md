@@ -121,6 +121,11 @@ required checks passed, then fast-forwards that branch: `main`, or the issue
 branch for a sub-issue. The history stays linear. The commits of a branch
 pushed unsigned, such as by GitHub's "Update branch", are re-signed in place.
 
+Dependabot pull requests are rewritten as Conventional Commits and signed.
+Each one also gets an issue, assigned to the repository owner, which the
+pull request closes when it is merged. If the pull request is closed
+without a merge, the issue is closed as not planned.
+
 ## Commit messages
 
 Commit messages MUST follow
