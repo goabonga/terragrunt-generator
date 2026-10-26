@@ -23,8 +23,7 @@ def generate_header(
 ) -> tuple[str, str]:
     lookup = lookup.replace("local.all", "")
 
-    lookup_parts = lookup.split(".")
-    lookup_prefix = lookup_parts[:-1][0] if len(lookup_parts) > 1 else lookup
+    lookup_prefix = lookup.split(".")[0]
 
     yaml_raw = get_yaml(lookup, variables, enabled)
     yaml_comment = yaml_raw.replace(f"{lookup_prefix}:", f"# {lookup_prefix}:").replace(
@@ -43,15 +42,13 @@ def generate_header(
 
 
 def generate_include(enable: bool = True) -> str:
-    content: str = ""
-    if enable is True:
-        content = "    path = find_in_parent_folders()"
-        return f"""
-include {{
-{content}
-}}
+    if enable is not True:
+        return ""
+    return """
+include {
+    path = find_in_parent_folders()
+}
 """
-    return ""
 
 
 def generate_locals(
@@ -78,17 +75,16 @@ locals {{
 
 
 def generate_terraform(lookup: str) -> str:
-    lookups = lookup.split(".")
-    previous = "local.all"
-    source = ""
-    for lookups_item in lookups:
-        source += f'lookup({previous}, "{lookups_item}", false) == false ? null : '
-        previous = f"{previous}.{lookups_item}"
-    source += f'lookup({previous}, "enabled", false) == false ? null : local.source'
+    """The source of the module, unless the lookup or its ``enabled`` is missing or false."""
+    scope = "local.all"
+    guards = ""
+    for key in [*lookup.split("."), "enabled"]:
+        guards += f'lookup({scope}, "{key}", false) == false ? null : '
+        scope = f"{scope}.{key}"
 
     return f"""
 terraform {{
-    source = {source}
+    source = {guards}local.source
 }}
 """
 
@@ -172,11 +168,12 @@ def generate(
     header, yaml = generate_header(
         source.name if name is None else name, source, lookup, variables, enabled
     )
-    results: str
-    results = header
-    results += generate_include(include)
-    results += generate_locals(source, config_filename, yaml_env)
-    results += generate_terraform(lookup)
-    results += generate_inputs(variables, lookup)
+    sections = [
+        header,
+        generate_include(include),
+        generate_locals(source, config_filename, yaml_env),
+        generate_terraform(lookup),
+        generate_inputs(variables, lookup),
+    ]
 
-    return results, yaml
+    return "".join(sections), yaml
