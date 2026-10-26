@@ -247,7 +247,8 @@ def test_output_bare_filename_no_directory(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -281,7 +282,8 @@ def test_output_explicit_file_path(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -324,7 +326,8 @@ def test_output_directory_without_slash(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -383,7 +386,8 @@ def test_yaml_output_merge_if_exists(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -439,7 +443,8 @@ def test_yaml_output_new_file_creation(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -493,7 +498,8 @@ def test_yaml_output_direct_file_without_env(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -545,7 +551,8 @@ def test_yaml_output_file_with_env_creates_in_parent(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",
@@ -606,7 +613,8 @@ def test_yaml_output_merge_existing_file(
     }
 
     with patch(
-        "terragrunt_generator.main.create_working_directory", return_value=str(tmp_path)
+        "terragrunt_generator.main.create_working_directory",
+        return_value=str(tmp_path / "work"),
     ):
         args = [
             "-u",

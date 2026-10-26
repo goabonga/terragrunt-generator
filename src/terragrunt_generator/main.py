@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 from tempfile import gettempdir
@@ -154,6 +155,14 @@ def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
 
     tempdir: str = create_working_directory()
+    try:
+        run(args, tempdir)
+    finally:
+        shutil.rmtree(tempdir, ignore_errors=True)
+
+
+def run(args: argparse.Namespace, tempdir: str) -> None:
+    """Generate the files for the parsed arguments from the module copied in ``tempdir``."""
     try:
         module_source(args.url, args.version).fetch(tempdir)
     except Exception as e:
