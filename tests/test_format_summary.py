@@ -312,3 +312,46 @@ def test_main_dispatches_every_command(
 def test_main_requires_a_command() -> None:
     with pytest.raises(SystemExit):
         fs.main([])
+
+
+@pytest.fixture
+def dist(tmp_path: Path) -> Path:
+    directory = tmp_path / "dist"
+    directory.mkdir()
+    _ = (directory / "demo-1.2.3.tar.gz").write_bytes(b"x" * 2048)
+    _ = (directory / "demo-1.2.3-py3-none-any.whl").write_bytes(b"y" * 1024)
+    _ = (directory / ".gitignore").write_text("*\n")
+    return directory
+
+
+def test_publish_lists_the_distributions_and_their_links(dist: Path) -> None:
+    text = fs.publish_summary(str(dist), "demo", "1.2.3", "owner/demo", "success")
+    assert text.startswith("## ✅ PyPI publish\n\n`demo` 1.2.3\n")
+    assert "| `demo-1.2.3-py3-none-any.whl` | 1.0 KiB |" in text
+    assert "| `demo-1.2.3.tar.gz` | 2.0 KiB |" in text
+    assert ".gitignore" not in text
+    assert "<https://pypi.org/project/demo/1.2.3/>" in text
+    assert "<https://github.com/owner/demo/releases/tag/1.2.3>" in text
+
+
+def test_publish_flags_a_failed_job(dist: Path) -> None:
+    text = fs.publish_summary(str(dist), "demo", "1.2.3", "", "failure")
+    assert text.startswith("## ❌ PyPI publish")
+    assert "GitHub release" not in text
+
+
+def test_publish_without_distributions_reports_the_missing_build(
+    tmp_path: Path,
+) -> None:
+    assert "No report was produced" in fs.publish_summary(
+        str(tmp_path / "dist"), "demo", "1.2.3", "owner/demo", "failure"
+    )
+
+
+def test_main_publish_reads_the_job_environment(
+    dist: Path, summary_file: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/demo")
+    monkeypatch.setenv("JOB_STATUS", "success")
+    fs.main(["publish", str(dist), "--package", "demo", "--version", "1.2.3"])
+    assert "releases/tag/1.2.3" in summary_file.read_text()
