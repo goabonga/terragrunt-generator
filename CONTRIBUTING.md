@@ -47,9 +47,14 @@ uv run ruff format --check src tests
 
 # Strict static type checking (mypy on src/).
 uv run mypy src
+
+# Second type checker, in standard mode (pyright on src/).
+uv run pyright
 ```
 
-All three checks run in CI and gate the release.
+These checks run in CI and gate the release, along with the tests, the
+SPDX header check and the security scans. Each CI job writes a summary of
+its result on the run page.
 
 ## License headers
 
@@ -158,8 +163,11 @@ for changes that bypass the deprecation cycle.
 
 Releases are fully automated. On every push to `main`, the workflow runs
 `multicz bump --commit --tag --push` and then publishes the bumped package
-to PyPI. Maintainers do not need to bump versions, edit changelogs or create
-tags by hand.
+to PyPI. The documentation site is redeployed only when the `docs`
+component is bumped, by a `docs:` commit or by a package release. The
+`chore(release)` commit pushed back by multicz does not start another run.
+Maintainers do not need to bump versions, edit changelogs or create tags by
+hand.
 
 ## Reporting bugs and asking for features
 
