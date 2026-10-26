@@ -9,6 +9,7 @@ from terragrunt_generator.generate import (
     generate_locals,
     generate_terraform,
 )
+from terragrunt_generator.source import GitSource
 from terragrunt_generator.variables import Variable
 
 
@@ -23,7 +24,9 @@ def test_generate_header():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
 
     print(results)
 
@@ -47,13 +50,10 @@ def test_generate_header():
 
 
 def test_generate_header_default_variables():
-    # Omitting `variables` exercises the `variables is None` guard, which
-    # falls back to an empty mandatories/optionals/nullables mapping.
+    # Omitting `variables` documents a module without any variable.
     results, yaml = generate_header(
         name="test",
-        url="https://gitserver.com/test/test.git",
-        path=None,
-        version="0.1.0",
+        source=GitSource("https://gitserver.com/test/test.git", "0.1.0"),
         lookup="test",
     )
     assert "# test 0.1.0" in results
@@ -71,7 +71,9 @@ def test_generate_header_with_deep_lookup():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
 
     print(results)
 
@@ -106,7 +108,9 @@ def test_generate_header_local_module():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
     excepted = """# test 0.1.0
 # ./test/test/
 #
@@ -137,7 +141,9 @@ def test_generate_header_module():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/
 #
@@ -168,7 +174,9 @@ def test_generate_header_submodule():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
@@ -199,7 +207,9 @@ def test_generate_header_nested_lookup():
         Variable("optionals", "optionals", default=""),
         Variable("nullables", "nullables", default=None),
     ]
-    results, yaml = generate_header(name, url, path, version, lookup, variables)
+    results, yaml = generate_header(
+        name, GitSource(url, version, path), lookup, variables
+    )
     excepted = """# test 0.1.0
 # https://gitserver.com/test/test/tree/0.1.0/modules/test
 #
@@ -237,7 +247,7 @@ def test_generate_locals():
     url: str = "https://gitserver.com/test/test.git"
     path = None
     version: str = "0.1.0"
-    results = generate_locals(url, path, version)
+    results = generate_locals(GitSource(url, version, path))
     print(results)
 
     expected = """
@@ -254,7 +264,7 @@ locals {
     url: str = "https://gitserver.com/test/test.git"
     path: str = "modules/test"
     version: str = "0.1.0"
-    results = generate_locals(url, path, version)
+    results = generate_locals(GitSource(url, version, path))
     print(results)
 
     expected = """
@@ -270,11 +280,8 @@ locals {
 
 
 def test_generate_terraform():
-    url: str = "https://gitserver.com/test/test.git"
-    path: str = "modules/test"
-    version: str = "0.1.0"
     lookup: str = "test"
-    results = generate_terraform(url, path, version, lookup)
+    results = generate_terraform(lookup)
 
     expected = """
 terraform {

@@ -2,10 +2,10 @@
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
 import json
-import os
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from terragrunt_generator.source import ModuleSource, module_source
 from terragrunt_generator.variables import (
     Variable,
     VariableKind,
@@ -16,17 +16,12 @@ from terragrunt_generator.yaml import get_yaml
 
 def generate_header(
     name: str,
-    url: str,
-    path: str | None,
-    version: str,
+    source: ModuleSource,
     lookup: str,
     variables: Sequence[Variable] = (),
     enabled: bool = True,
 ) -> tuple[str, str]:
     lookup = lookup.replace("local.all", "")
-    path = path or ""
-    if "http" in url:
-        url = f"{url.replace('.git', '')}/tree/{version}/{path}"
 
     lookup_parts = lookup.split(".")
     lookup_prefix = lookup_parts[:-1][0] if len(lookup_parts) > 1 else lookup
@@ -36,8 +31,8 @@ def generate_header(
         "\n  ", "\n#   "
     )
 
-    header = f"""# {name} {version}
-# {url}
+    header = f"""# {name} {source.version}
+# {source.web_url}
 #
 # yaml config
 # ```
@@ -60,9 +55,7 @@ include {{
 
 
 def generate_locals(
-    url: str,
-    path: str | None = None,
-    version: str = "",
+    source: ModuleSource,
     config_filename: str = "config.yaml",
     yaml_env: str | None = None,
 ) -> str:
@@ -76,11 +69,7 @@ def generate_locals(
 
     return f"""
 locals {{
-    {env_line}source = {
-        f'"{url.replace("https://", "").replace("http://", "")}{f"//{path}" if path is not None else ""}?ref={version}"'
-        if "http" in url
-        else f'find_in_parent_folders("{url}")'
-    }
+    {env_line}source = {source.terragrunt_source}
     all = merge(
         yamldecode(file(find_in_parent_folders({config_line}))),
     )
@@ -88,7 +77,7 @@ locals {{
 """
 
 
-def generate_terraform(url: str, path: str | None, version: str, lookup: str) -> str:
+def generate_terraform(lookup: str) -> str:
     lookups = lookup.split(".")
     previous = "local.all"
     source = ""
@@ -96,9 +85,6 @@ def generate_terraform(url: str, path: str | None, version: str, lookup: str) ->
         source += f'lookup({previous}, "{lookups_item}", false) == false ? null : '
         previous = f"{previous}.{lookups_item}"
     source += f'lookup({previous}, "enabled", false) == false ? null : local.source'
-
-    path = f"//{path}" if path is not None else ""
-    url = f"{url.replace('https://', '').replace('http://', '')}{path}?ref={version}"
 
     return f"""
 terraform {{
@@ -181,19 +167,16 @@ def generate(
     enabled: bool = True,
 ) -> tuple[str, str]:
     variables = parse_variables(hcl_files.get("variable", []))
+    source = module_source(url, version, path)
 
-    if name is None:
-        if path is not None:
-            name = path.split("/")[-1:][0]
-        else:
-            name = os.path.dirname(url).split("/")[-1:][0].replace(".git", "")
-
-    header, yaml = generate_header(name, url, path, version, lookup, variables, enabled)
+    header, yaml = generate_header(
+        source.name if name is None else name, source, lookup, variables, enabled
+    )
     results: str
     results = header
     results += generate_include(include)
-    results += generate_locals(url, path, version, config_filename, yaml_env)
-    results += generate_terraform(url, path, version, lookup)
+    results += generate_locals(source, config_filename, yaml_env)
+    results += generate_terraform(lookup)
     results += generate_inputs(variables, lookup)
 
     return results, yaml

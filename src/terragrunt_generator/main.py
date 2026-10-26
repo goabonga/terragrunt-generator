@@ -5,16 +5,14 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from shutil import copytree
 from tempfile import gettempdir
 from typing import Any
 from uuid import uuid4
 
 from terragrunt_generator import __prog__, __version__
 from terragrunt_generator.generate import generate
-from terragrunt_generator.git import clone
 from terragrunt_generator.reader import read_directory
-from terragrunt_generator.utils import is_local
+from terragrunt_generator.source import module_source
 from terragrunt_generator.yaml import merge_yaml_strings
 
 parser = argparse.ArgumentParser(
@@ -96,13 +94,6 @@ def create_working_directory() -> str:
     return tempdir
 
 
-def copy_terraform_module(url: str, version: str, path: str) -> None:
-    if is_local(url):
-        copytree(url, path)
-    else:
-        clone(url, path, version)
-
-
 def write_hcl_file(args: argparse.Namespace, output: str) -> None:
 
     if args.output.endswith("/") or not os.path.splitext(args.output)[1]:
@@ -125,7 +116,7 @@ def main(argv: list[str] | None = None) -> None:
 
     tempdir: str = create_working_directory()
     try:
-        copy_terraform_module(args.url, args.version, tempdir)
+        module_source(args.url, args.version).fetch(tempdir)
     except BaseException as e:
         print(str(e))
         sys.exit(1)
