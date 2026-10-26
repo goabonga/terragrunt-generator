@@ -89,11 +89,11 @@ jobs:
       - name: Check SPDX headers
         run: |
           {
-            uv run python scripts/add_license_header.py --path src --types py --check
-            uv run python scripts/add_license_header.py --path tests --types py --check
-            uv run python scripts/add_license_header.py --path scripts --types py --check
-            uv run python scripts/add_license_header.py --path .github --types yml --check
-            uv run python scripts/add_license_header.py --path . --types toml --check
+            uv run --no-project python scripts/add_license_header.py --path src --types py --check
+            uv run --no-project python scripts/add_license_header.py --path tests --types py --check
+            uv run --no-project python scripts/add_license_header.py --path scripts --types py --check
+            uv run --no-project python scripts/add_license_header.py --path .github --types yml --check
+            uv run --no-project python scripts/add_license_header.py --path . --types toml --check
           } 2>&1 | tee headers.txt
       - name: Summarize license headers
         if: ${{ !cancelled() }}
