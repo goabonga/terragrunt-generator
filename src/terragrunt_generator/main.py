@@ -156,7 +156,7 @@ def main(argv: list[str] | None = None) -> None:
     tempdir: str = create_working_directory()
     try:
         module_source(args.url, args.version).fetch(tempdir)
-    except BaseException as e:
+    except Exception as e:
         print(str(e))
         sys.exit(1)
 
