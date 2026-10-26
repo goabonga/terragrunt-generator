@@ -69,6 +69,7 @@ def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "HEAD_REF": "feature/x",
         "SIGNAL_SHA": SHA,
         "SIGNAL_BRANCH": "feature/x",
+        "BASE_BRANCH": "main",
         "LABELLER": "goabonga",
         "MERGE_LABEL": "auto-merge",
         "PR_WRITE_TOKEN": "token",
@@ -109,13 +110,13 @@ def resign(
 
 def test_unsigned_commits_pushed_by_a_writer_are_re_signed(env: Path) -> None:
     calls = resign([pull()], [commit(True), commit(False)])
-    assert outputs(env) == {"number": "9", "needed": "true"}
+    assert outputs(env) == {"number": "9", "base": "main", "needed": "true"}
     assert any("/collaborators/goabonga/permission" in call for call in calls)
 
 
 def test_a_fully_signed_branch_needs_nothing_and_cannot_loop(env: Path) -> None:
     calls = resign([pull()], [commit(True), commit(True)])
-    assert outputs(env) == {"number": "9", "needed": "false"}
+    assert outputs(env) == {"number": "9", "base": "main", "needed": "false"}
     assert not any("/collaborators/" in call for call in calls)
 
 
@@ -331,19 +332,17 @@ def labelled(number: int, *stamps: str) -> list[Any]:
     ]
 
 
+def queued_pull(number: int, labelled_with: tuple[str, ...] = ("auto-merge",)) -> Any:
+    return {"number": number, "labels": [{"name": name} for name in labelled_with]}
+
+
 def test_the_queue_is_ordered_by_the_latest_label() -> None:
     events = {1: labelled(1, "2026-01-01", "2026-01-05"), 2: labelled(2, "2026-01-03")}
 
     def respond(endpoint: str, *args: Any, **kwargs: Any) -> Any:
         if "/events" in endpoint:
             return paged(events[int(endpoint.split("/issues/")[1].split("/")[0])])
-        return paged(
-            [
-                {"number": 1, "pull_request": {}},
-                {"number": 2, "pull_request": {}},
-                {"number": 3},
-            ]
-        )
+        return paged([queued_pull(1), queued_pull(2), queued_pull(3, ())])
 
     with patch.object(ci, "api", side_effect=respond):
         assert ci.queue_ahead(1) == [2]
@@ -354,10 +353,17 @@ def test_a_pull_request_outside_the_queue_waits_for_all() -> None:
     def respond(endpoint: str, *args: Any, **kwargs: Any) -> Any:
         if "/events" in endpoint:
             return paged(labelled(2, "2026-01-03"))
-        return paged([{"number": 2, "pull_request": {}}])
+        return paged([queued_pull(2)])
 
     with patch.object(ci, "api", side_effect=respond):
         assert ci.queue_ahead(7) == [2]
+
+
+def test_each_base_has_its_own_queue(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASE_REF", "issue-12-readability")
+    with patch.object(ci, "api", return_value=paged([])) as client:
+        assert ci.queue_ahead(7) == []
+    assert "base=issue-12-readability" in client.call_args.args[0]
 
 
 def test_the_queue_waits_while_a_release_is_pending(
@@ -688,3 +694,154 @@ def test_commit_messages_are_cleaned(raw: str, expected: str) -> None:
 def test_invalid_subjects_are_refused(subject: str) -> None:
     with pytest.raises(SystemExit, match="invalid Conventional Commit"):
         sign.clean_message(subject)
+
+
+ISSUE = "issue-12-readability"
+
+
+@pytest.fixture
+def issue_base(monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.setenv("BASE_REF", ISSUE)
+    monkeypatch.setenv("BASE_BRANCH", ISSUE)
+    return ISSUE
+
+
+def test_a_sub_issue_pull_request_may_merge_into_its_issue_branch(
+    issue_base: str,
+) -> None:
+    sub = pull(base=issue_base, labels=("auto-merge",), ref="issue-13-dataclass")
+    assert ci.merge_authorized(sub, SHA) is False  # HEAD_REF is feature/x
+    sub = pull(base=issue_base, labels=("auto-merge",))
+    assert ci.merge_authorized(sub, SHA) is True
+
+
+def test_a_pull_request_into_another_base_is_not_authorized(issue_base: str) -> None:
+    assert not ci.merge_authorized(pull(base="main", labels=("auto-merge",)), SHA)
+    assert not ci.merge_authorized(pull(base="other", labels=("auto-merge",)), SHA)
+
+
+def test_the_queue_refuses_a_base_that_is_neither_main_nor_an_issue_branch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BASE_REF", "develop")
+    with pytest.raises(ValueError, match="does not merge into develop"):
+        ci.base_branch()
+
+
+def test_replaying_onto_an_issue_branch_never_touches_main(
+    issue_base: str, tmp_path: Path
+) -> None:
+    calls = []
+
+    def fake_git(*args: str) -> str:
+        calls.append(args)
+        return "f" * 40 if args[0] == "rev-parse" else ""
+
+    with (
+        patch.object(ci, "git", side_effect=fake_git),
+        patch.object(ci.subprocess, "run"),
+    ):
+        ci.rebase("merge")
+    assert ("fetch", "origin", ISSUE) in calls
+    assert ("rev-parse", f"origin/{ISSUE}") in calls
+    assert not any("main" in part for call in calls for part in call)
+
+
+def test_merging_fast_forwards_the_issue_branch(
+    issue_base: str, tmp_path: Path
+) -> None:
+    (tmp_path / "merge-base-sha").write_text("1" * 40)
+
+    def fake_git(*args: str) -> str:
+        return "1" * 40 if args[1] == f"origin/{ISSUE}" else SHA
+
+    with (
+        patch.object(ci, "git", side_effect=fake_git),
+        patch.object(
+            ci, "pull_request", return_value=pull(base=ISSUE, labels=("auto-merge",))
+        ),
+        patch.object(ci, "check_labeller"),
+        patch.object(ci, "authenticated_git") as push,
+        patch.object(ci, "api") as client,
+    ):
+        ci.merge()
+    push.assert_called_once_with("push", "origin", f"HEAD:refs/heads/{ISSUE}")
+    assert f"Merged into `{ISSUE}`" in client.call_args.args[2]["body"]
+
+
+def test_an_issue_branch_requires_the_checks_of_main(issue_base: str) -> None:
+    rules = [
+        {
+            "type": "required_status_checks",
+            "parameters": {"required_status_checks": [{"context": "lint"}]},
+        }
+    ]
+
+    def respond(endpoint: str, *args: Any, **kwargs: Any) -> Any:
+        return [] if endpoint.endswith(f"/branches/{ISSUE}") else rules
+
+    with patch.object(ci, "api", side_effect=respond) as client:
+        assert ci.required_checks() == {"lint"}
+    assert [call.args[0].rsplit("/", 1)[1] for call in client.call_args_list] == [
+        ISSUE,
+        "main",
+    ]
+
+
+def test_a_base_with_its_own_checks_does_not_fall_back_to_main(
+    issue_base: str,
+) -> None:
+    own = [
+        {
+            "type": "required_status_checks",
+            "parameters": {"required_status_checks": [{"context": "own"}]},
+        }
+    ]
+    with patch.object(ci, "api", return_value=own) as client:
+        assert ci.required_checks() == {"own"}
+    assert client.call_count == 1
+
+
+def test_an_issue_branch_does_not_wait_for_a_release(
+    issue_base: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("QUEUE_DIR", str(tmp_path))
+    with (
+        patch.object(
+            ci, "pull_request", return_value=pull(base=ISSUE, labels=("auto-merge",))
+        ),
+        patch.object(ci, "queue_ahead", return_value=[]),
+        patch.object(ci, "pending_release") as pending,
+        patch.object(ci.time, "sleep") as sleep,
+    ):
+        ci.wait_turn()
+    pending.assert_not_called()
+    sleep.assert_not_called()
+
+
+def test_pull_requests_into_an_issue_branch_are_re_signed(
+    env: Path, issue_base: str
+) -> None:
+    resign([pull(base=issue_base)], [commit(False)])
+    assert outputs(env) == {"number": "9", "base": issue_base, "needed": "true"}
+
+
+def test_re_signing_keeps_the_issue_branch_base(issue_base: str) -> None:
+    calls = []
+
+    def fake_git(*args: str) -> str:
+        calls.append(args)
+        return "e" * 40 if args[0] == "merge-base" else ""
+
+    with (
+        patch.object(ci, "git", side_effect=fake_git),
+        patch.object(ci.subprocess, "run"),
+    ):
+        ci.rebase("resign")
+    assert ("merge-base", f"origin/{ISSUE}", "HEAD") in calls
+
+
+def test_re_signing_refuses_an_unknown_base(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BASE_BRANCH", "develop")
+    with pytest.raises(ValueError, match="not re-signed"):
+        ci.resign_base()
