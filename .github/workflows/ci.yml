@@ -376,8 +376,9 @@ jobs:
           ref: main
       - uses: astral-sh/setup-uv@v7
         with:
-          enable-cache: true
-          cache-suffix: ${{ github.job }}
+          # No cache in the job that publishes: a poisoned cache entry
+          # would end up in the wheel.
+          enable-cache: false
       - name: Install multicz
         run: uv tool install multicz
       - name: Build wheel and sdist
