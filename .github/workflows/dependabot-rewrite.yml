@@ -54,6 +54,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          # A push made with the workflow token starts no workflow, so the
+          # rewritten head would never run CI nor be queued for merging.
+          token: ${{ secrets.AUTO_MERGE_PAT || github.token }}
           persist-credentials: true
 
       - name: Configure GPG and git identity from the imported key
