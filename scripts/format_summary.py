@@ -69,6 +69,35 @@ class AuditReport(TypedDict):
     dependencies: list[Dependency]
 
 
+class PyrightPosition(TypedDict):
+    line: int
+    character: int
+
+
+class PyrightRange(TypedDict):
+    start: PyrightPosition
+
+
+class PyrightDiagnostic(TypedDict):
+    file: str
+    severity: str
+    message: str
+    range: PyrightRange
+    rule: NotRequired[str]
+
+
+class PyrightSummary(TypedDict):
+    filesAnalyzed: int
+    errorCount: int
+    warningCount: int
+    timeInSec: float
+
+
+class PyrightReport(TypedDict):
+    generalDiagnostics: list[PyrightDiagnostic]
+    summary: PyrightSummary
+
+
 class Bump(TypedDict):
     current_version: NotRequired[str]
     next_version: NotRequired[str]
@@ -309,6 +338,33 @@ def pip_audit_summary(path: str | None) -> str:
     )
 
 
+def pyright_summary(path: str | None) -> str:
+    report = cast("PyrightReport | None", load_json(path))
+    if report is None:
+        return missing_report("pyright", path)
+    totals = report["summary"]
+    diagnostics = report["generalDiagnostics"]
+    counted = f"{totals['filesAnalyzed']} file(s) analysed in {totals['timeInSec']:.1f}s"
+    if not diagnostics:
+        return f"## {OK} pyright\n\nNo type error. {counted}.\n"
+    rows = [
+        (
+            d["severity"],
+            d.get("rule", ""),
+            f"{relative(d['file'])}:{d['range']['start']['line'] + 1}",
+            d["message"].splitlines()[0],
+        )
+        for d in sorted(diagnostics, key=lambda d: (d["file"], d["range"]["start"]["line"]))
+    ]
+    icon = FAIL if totals["errorCount"] else WARN
+    return (
+        f"## {icon} pyright\n\n{totals['errorCount']} error(s), "
+        f"{totals['warningCount']} warning(s). {counted}.\n\n"
+        + table(["Severity", "Rule", "Location", "Message"], rows)
+        + "\n"
+    )
+
+
 def text_summary(title: str, path: str | None, status: str) -> str:
     """A tool without a structured report: its status and the end of its output."""
     text = read_text(path)
@@ -373,7 +429,15 @@ def emit(text: str) -> None:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("ruff-check", "ruff-format", "headers", "bandit", "pip-audit", "release"):
+    for name in (
+        "ruff-check",
+        "ruff-format",
+        "headers",
+        "bandit",
+        "pip-audit",
+        "pyright",
+        "release",
+    ):
         _ = sub.add_parser(name).add_argument("report")
     pytest = sub.add_parser("pytest")
     _ = pytest.add_argument("--junit", required=True)
@@ -405,6 +469,7 @@ def main(argv: list[str] | None = None) -> None:
             "headers": license_headers,
             "bandit": bandit_summary,
             "pip-audit": pip_audit_summary,
+            "pyright": pyright_summary,
             "release": release_summary,
         }
         emit(formatters[args.command](args.report))
