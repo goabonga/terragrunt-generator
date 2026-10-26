@@ -737,3 +737,58 @@ inputs = merge({
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
 )"""
     assert results == expected
+
+
+def test_generate_terraform_guards_every_level_of_a_nested_lookup():
+    results = generate_terraform("gke.cluster.helper")
+
+    assert results == (
+        "\nterraform {\n    source = "
+        'lookup(local.all, "gke", false) == false ? null : '
+        'lookup(local.all.gke, "cluster", false) == false ? null : '
+        'lookup(local.all.gke.cluster, "helper", false) == false ? null : '
+        'lookup(local.all.gke.cluster.helper, "enabled", false) == false ? null : '
+        "local.source\n}\n"
+    )
+
+
+def test_generate_include_disabled_renders_nothing():
+    assert generate_include(False) == ""
+    assert generate_include(True) == (
+        "\ninclude {\n    path = find_in_parent_folders()\n}\n"
+    )
+
+
+def test_generate_joins_the_sections_in_order():
+    results, _ = generate(
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+        hcl_files={},
+        name="test",
+    )
+
+    order = [
+        "# test 0.1.0",
+        "\ninclude {",
+        "\nlocals {",
+        "\nterraform {",
+        "\ninputs = {",
+    ]
+    positions = [results.index(section) for section in order]
+    assert positions == sorted(positions)
+
+
+def test_generate_without_include_has_no_include_block():
+    results, _ = generate(
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+        hcl_files={},
+        include=False,
+    )
+
+    assert "include {" not in results
+    assert "\nlocals {" in results
