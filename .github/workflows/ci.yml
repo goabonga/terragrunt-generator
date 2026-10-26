@@ -5,7 +5,9 @@ name: ci
 
 on:
   pull_request:
-    branches: [main]
+    # An issue branch collects the pull requests of its sub-issues before it
+    # reaches main, so they are checked like the ones into main.
+    branches: [main, "issue-*"]
   push:
     branches: [main]
 
