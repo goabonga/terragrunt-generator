@@ -3,6 +3,7 @@
 
 import pytest
 
+from terragrunt_generator.variables import Variable
 from terragrunt_generator.yaml import format_description, get_yaml, merge_yaml_strings
 
 
@@ -42,17 +43,11 @@ def test_format_description(description, indent, expected):
 
 def test_get_yaml():
     name: str = "test"
-    variables: dict = {
-        "mandatories": [{"name": "mandatories", "description": "mandatories"}],
-        "optionals": [
-            {
-                "name": "optionals",
-                "description": "optionals",
-                "default": "optional_value",
-            }
-        ],
-        "nullables": [{"name": "nullables", "description": "nullables"}],
-    }
+    variables = [
+        Variable("mandatories", "mandatories"),
+        Variable("optionals", "optionals", default="optional_value"),
+        Variable("nullables", "nullables", default=None),
+    ]
     resutls = get_yaml(name, variables)
     print(resutls)
     excepted = """test:

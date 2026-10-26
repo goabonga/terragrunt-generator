@@ -3,8 +3,14 @@
 
 import json
 import os
+from collections.abc import Callable, Sequence
 from typing import Any
 
+from terragrunt_generator.variables import (
+    Variable,
+    VariableKind,
+    parse_variables,
+)
 from terragrunt_generator.yaml import get_yaml
 
 
@@ -14,11 +20,9 @@ def generate_header(
     path: str | None,
     version: str,
     lookup: str,
-    variables: dict[str, Any] | None = None,
+    variables: Sequence[Variable] = (),
     enabled: bool = True,
 ) -> tuple[str, str]:
-    if variables is None:
-        variables = {"mandatories": {}, "optionals": {}, "nullables": {}}
     lookup = lookup.replace("local.all", "")
     path = path or ""
     if "http" in url:
@@ -103,97 +107,65 @@ terraform {{
 """
 
 
-def generate_inputs(
-    variables: list[dict[str, Any]] | None = None, lookup: str = "local.all"
-) -> str:
-    content_fisrt: str = ""
-    content_next: str = ""
-    content_nullable: str = ""
-    variables = sorted(variables or [], key=lambda d: d["name"], reverse=False)
-    for variable in variables:
-        description = (
-            variable.get("description", "")
-            .replace("    ", "")
-            .replace("\n", "\n    # ")
-            .replace('\\"', '"')
-        )
-        if variable.get("nullable", False) is False:
-            _content: str = ""
-            line_doc: str = f"{variable.get('name')} - {description}"
-            mandatory = variable.get("mandatory", False)
-            line_doc += " - required" if mandatory is True else ""
-            line_content: str = f"{variable.get('name')} = "
-            name = variable.get("name")
-            line_content += f'lookup(local.all.{lookup}, "{name}"'
-            value: str = ""
-            if variable.get("type", None) == "string":
-                value = f', "{variable.get("default", "")}"'
-            else:
-                value = f", {json.dumps(variable.get('default'))}"
-            line_content += value
-            line_content += ")"
-            _content = f"""    # {line_doc}
-    {line_content}
-"""
-            if variable.get("mandatory", False) is True:
-                content_fisrt += _content
-            else:
-                content_next += _content
-        else:
-            name = variable.get("name")
-            content_nullable += f"\n  # {name} - {description}"
-            content_nullable += f'\n  (lookup(local.all.{lookup}, "{name}", null)'
-            content_nullable += " == null ? {} : "
-            content_nullable += f'{{ {name} =  lookup(local.all.{lookup}, "{name}") }}'
-            content_nullable += "),"
+def input_description(variable: Variable) -> str:
+    return (
+        variable.description.replace("    ", "")
+        .replace("\n", "\n    # ")
+        .replace('\\"', '"')
+    )
 
-    if content_nullable != "":
+
+def render_input(variable: Variable, lookup: str) -> str:
+    """The documented ``lookup`` line of a mandatory or optional variable."""
+    doc = f"{variable.name} - {input_description(variable)}"
+    if variable.kind is VariableKind.MANDATORY:
+        doc += " - required"
+    if variable.type == "string":
+        text = "" if variable.value is None else variable.value
+        default = f', "{text}"'
+    else:
+        default = f", {json.dumps(variable.value)}"
+    return (
+        f"    # {doc}\n"
+        f'    {variable.name} = lookup(local.all.{lookup}, "{variable.name}"{default})\n'
+    )
+
+
+def render_nullable(variable: Variable, lookup: str) -> str:
+    """The merge entry of a variable that defaults to null."""
+    name = variable.name
+    return (
+        f"\n  # {name} - {input_description(variable)}"
+        f'\n  (lookup(local.all.{lookup}, "{name}", null)'
+        " == null ? {} : "
+        f'{{ {name} =  lookup(local.all.{lookup}, "{name}") }}'
+        "),"
+    )
+
+
+def generate_inputs(
+    variables: Sequence[Variable] = (), lookup: str = "local.all"
+) -> str:
+    ordered = sorted(variables, key=lambda variable: variable.name)
+
+    def rendered(kind: VariableKind, render: Callable[[Variable, str], str]) -> str:
+        return "".join(render(v, lookup) for v in ordered if v.kind is kind)
+
+    mandatory = rendered(VariableKind.MANDATORY, render_input)
+    optional = rendered(VariableKind.OPTIONAL, render_input).rstrip("\n")
+    nullable = rendered(VariableKind.NULLABLE, render_nullable).rstrip(",")
+
+    if nullable != "":
         return f"""
 inputs = merge({{
-{content_fisrt}{content_next.rstrip(content_next[-1]) if content_next else ""}
-}},{content_nullable.rstrip(content_nullable[-1])}
+{mandatory}{optional}
+}},{nullable}
 )"""
 
     return f"""
 inputs = {{
-{content_fisrt}{content_next.rstrip(content_next[-1]) if content_next else ""}
+{mandatory}{optional}
 }}"""
-
-
-def parse_variables(
-    variables: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    outputs: list[dict[str, Any]] = []
-    mandatories: list[dict[str, Any]] = []
-    optionals: list[dict[str, Any]] = []
-    nullables: list[dict[str, Any]] = []
-    for variable in variables:
-        for k in variable:
-            v: dict[str, Any] = variable[k].copy()
-            if v.get("type") is not None:
-                v["type"] = v["type"].replace("${", "").replace("}", "")
-            if "default" not in list(v.keys()):
-                v["mandatory"] = True
-                v["nullable"] = False
-            elif "default" in list(v.keys()) and v.get("default", "") is None:
-                v["mandatory"] = False
-                v["nullable"] = True
-            else:
-                v["mandatory"] = False
-                v["nullable"] = False
-            v = v | {"name": k}
-            if v.get("mandatory") is True:
-                mandatories.append(v)
-            if v.get("nullable") is True:
-                nullables.append(v)
-            if v.get("mandatory") is False and v.get("nullable") is False:
-                optionals.append(v)
-            outputs.append(v)
-    return outputs, {
-        "mandatories": mandatories,
-        "optionals": optionals,
-        "nullables": nullables,
-    }
 
 
 def generate(
@@ -208,7 +180,7 @@ def generate(
     yaml_env: str | None = None,
     enabled: bool = True,
 ) -> tuple[str, str]:
-    variables, variables_object = parse_variables(hcl_files.get("variable", []))
+    variables = parse_variables(hcl_files.get("variable", []))
 
     if name is None:
         if path is not None:
@@ -216,9 +188,7 @@ def generate(
         else:
             name = os.path.dirname(url).split("/")[-1:][0].replace(".git", "")
 
-    header, yaml = generate_header(
-        name, url, path, version, lookup, variables_object, enabled
-    )
+    header, yaml = generate_header(name, url, path, version, lookup, variables, enabled)
     results: str
     results = header
     results += generate_include(include)

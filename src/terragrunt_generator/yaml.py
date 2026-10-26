@@ -2,7 +2,9 @@
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
 import json
-from typing import Any
+from collections.abc import Sequence
+
+from terragrunt_generator.variables import Variable, VariableKind
 
 
 def format_description(description: str, indent: str) -> str:
@@ -16,22 +18,23 @@ def format_description(description: str, indent: str) -> str:
     return formatted
 
 
-def get_yaml(name: str, variables: dict[str, Any], is_enabled: bool = True) -> str:
+def get_yaml(name: str, variables: Sequence[Variable], is_enabled: bool = True) -> str:
 
     name_parts = name.split(".")
     indent = "  " * len(name_parts)
 
     text = ""
-    for var_type in ("mandatories", "optionals", "nullables"):
-        for variable in variables.get(var_type, []):
-            default = variable.get("default")
-            description = format_description(variable.get("description", ""), indent)
+    for kind in (VariableKind.MANDATORY, VariableKind.OPTIONAL, VariableKind.NULLABLE):
+        for variable in (v for v in variables if v.kind is kind):
+            default = variable.value
+            description = format_description(variable.description, indent)
 
-            text += f"{indent}# {variable['name']} - {description}\n"
-            if var_type == "nullables" or var_type == "optionals":
-                text += f"{indent}# {variable['name']}: {json.dumps(default) if default else ''}\n"
-            else:
-                text += f"{indent}{variable['name']}: {json.dumps(default) if default else ''}\n"
+            text += f"{indent}# {variable.name} - {description}\n"
+            commented = "# " if kind is not VariableKind.MANDATORY else ""
+            text += (
+                f"{indent}{commented}{variable.name}: "
+                f"{json.dumps(default) if default else ''}\n"
+            )
 
     nested_yaml = ""
     current_indent = ""
