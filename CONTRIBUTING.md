@@ -151,6 +151,11 @@ fix(generate): preserve quoted defaults in inputs block
 docs: clarify the --lookup syntax
 ```
 
+The subject is at most 72 characters, has no trailing period and a
+lowercase first word after the colon: the signed merge refuses any other
+subject, so the `commit-subject` pre-commit hook and the `commit-subjects`
+CI job check it first.
+
 Do not append `Co-Authored-By` trailers; the workflow expects a single
 authored release commit per push.
 
