@@ -98,6 +98,23 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 scripts/format_summary.py pyright pyright.json
 
+  # The signed merge replays the commits through sign_commit.py, which
+  # refuses an invalid subject; fail here, before the label is added.
+  commit-subjects:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/check_commit_subject.py --range "$BASE_SHA..$HEAD_SHA"
+
   # Verify the two-line SPDX header on every Python source and config.
   license-headers:
     name: license-headers
