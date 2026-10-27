@@ -118,3 +118,13 @@ repos:
           # docs/stability.md. Both map to a minor bump in multicz.
           - deprecate
           - remove
+  # The rule of scripts/sign_commit.py, applied before the signed merge
+  # refuses the commit: at most 72 characters, no trailing period, a
+  # lowercase summary.
+  - repo: local
+    hooks:
+      - id: commit-subject
+        name: commit subject
+        entry: python3 scripts/check_commit_subject.py
+        language: system
+        stages: [commit-msg]
