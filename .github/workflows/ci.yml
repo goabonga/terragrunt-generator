@@ -409,8 +409,10 @@ jobs:
           packages-dir: dist
           skip-existing: true
       - name: Create GitHub release
+        # The maintainer token, like the release job: the release is
+        # published under the maintainer account, not the bot.
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_PAT || github.token }}
         run: |
           set -euo pipefail
           version="${{ needs.release.outputs.version }}"
