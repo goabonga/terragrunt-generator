@@ -19,13 +19,12 @@ def generate_header(
     source: ModuleSource,
     lookup: str,
     variables: Sequence[Variable] = (),
-    enabled: bool = True,
 ) -> tuple[str, str]:
     lookup = lookup.replace("local.all", "")
 
     lookup_prefix = lookup.split(".")[0]
 
-    yaml_raw = get_yaml(lookup, variables, enabled)
+    yaml_raw = get_yaml(lookup, variables)
     yaml_comment = yaml_raw.replace(f"{lookup_prefix}:", f"# {lookup_prefix}:").replace(
         "\n  ", "\n#   "
     )
@@ -181,7 +180,6 @@ def generate(
     name: str | None = None,
     config_filename: str = "config.yaml",
     yaml_env: str | None = None,
-    enabled: bool = True,
     exclude: bool = False,
     exclude_actions: Sequence[str] = ("all",),
     exclude_dependencies: bool = False,
@@ -191,7 +189,7 @@ def generate(
     source = module_source(url, version, path)
 
     header, yaml = generate_header(
-        source.name if name is None else name, source, lookup, variables, enabled
+        source.name if name is None else name, source, lookup, variables
     )
     sections = [
         header,
