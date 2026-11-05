@@ -97,7 +97,42 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=False,
     )
+
+    parser.add_argument(
+        "--exclude-actions",
+        help="Actions skipped by the exclude block, e.g. plan, apply, all, all_except_output (can be specified multiple times, default: all). Requires --exclude.",
+        action="append",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--exclude-dependencies",
+        help="Whether the exclude block also excludes the dependencies of the unit (default: false). Requires --exclude.",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+
+    parser.add_argument(
+        "--exclude-no-run",
+        help="Whether the exclude block only prevents the unit from running, ignored for --all commands (default: false). Requires --exclude.",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
     return parser
+
+
+def check_exclude_options(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> None:
+    """Reject the ``--exclude-*`` options given without ``--exclude``."""
+    given = {
+        "--exclude-actions": args.exclude_actions,
+        "--exclude-dependencies": args.exclude_dependencies,
+        "--exclude-no-run": args.exclude_no_run,
+    }
+    used = [option for option, value in given.items() if value is not None]
+    if used and not args.exclude:
+        parser.error(f"{', '.join(used)} requires --exclude")
 
 
 def create_working_directory() -> str:
@@ -160,7 +195,9 @@ def write_hcl_file(output: str, content: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    check_exclude_options(parser, args)
 
     tempdir: str = create_working_directory()
     try:
@@ -190,6 +227,9 @@ def run(args: argparse.Namespace, tempdir: str) -> None:
         yaml_env=args.yaml_for_env[0] if args.yaml_for_env else None,
         enabled=args.enabled,
         exclude=args.exclude,
+        exclude_actions=args.exclude_actions or ["all"],
+        exclude_dependencies=bool(args.exclude_dependencies),
+        exclude_no_run=bool(args.exclude_no_run),
     )
 
     for yaml_output in args.yaml_output:
