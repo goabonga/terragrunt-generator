@@ -3,6 +3,7 @@
 
 from terragrunt_generator.generate import (
     generate,
+    generate_exclude,
     generate_header,
     generate_include,
     generate_inputs,
@@ -750,6 +751,52 @@ def test_generate_terraform_guards_every_level_of_a_nested_lookup():
         'lookup(local.all.gke.cluster.helper, "enabled", false) == false ? null : '
         "local.source\n}\n"
     )
+
+
+def test_generate_exclude():
+    assert (
+        generate_exclude("kms")
+        == """
+exclude {
+    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    actions = ["all"]
+    exclude_dependencies = false
+}
+"""
+    )
+
+
+def test_generate_exclude_guards_every_level_of_a_nested_lookup():
+    assert generate_exclude("gke.cluster") == (
+        "\nexclude {\n    if = ("
+        'lookup(local.all, "gke", false) == false ? null : '
+        'lookup(local.all.gke, "cluster", false) == false ? null : '
+        'lookup(local.all.gke.cluster, "enabled", false) == false ? null : '
+        "local.source) == null\n"
+        '    actions = ["all"]\n'
+        "    exclude_dependencies = false\n}\n"
+    )
+
+
+def test_generate_puts_the_exclude_block_after_the_terraform_block():
+    arguments = {
+        "url": "https://gitserver.com/test/test.git",
+        "path": None,
+        "version": "0.1.0",
+        "lookup": "test",
+        "hcl_files": {},
+        "name": "test",
+    }
+
+    without, _ = generate(**arguments)
+    with_exclude, yaml = generate(**arguments, exclude=True)
+
+    assert "exclude {" not in without
+    assert with_exclude == without.replace(
+        generate_terraform("test"),
+        generate_terraform("test") + generate_exclude("test"),
+    )
+    assert yaml == generate(**arguments)[1]
 
 
 def test_generate_include_disabled_renders_nothing():

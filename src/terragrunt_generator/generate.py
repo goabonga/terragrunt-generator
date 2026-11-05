@@ -93,6 +93,17 @@ terraform {{
 """
 
 
+def generate_exclude(lookup: str) -> str:
+    """The ``exclude`` block of a unit whose guarded source is ``null``."""
+    return f"""
+exclude {{
+    if = ({guarded_source(lookup)}) == null
+    actions = ["all"]
+    exclude_dependencies = false
+}}
+"""
+
+
 def input_description(variable: Variable) -> str:
     return (
         variable.description.replace("    ", "")
@@ -165,6 +176,7 @@ def generate(
     config_filename: str = "config.yaml",
     yaml_env: str | None = None,
     enabled: bool = True,
+    exclude: bool = False,
 ) -> tuple[str, str]:
     variables = parse_variables(hcl_files.get("variable", []))
     source = module_source(url, version, path)
@@ -177,6 +189,7 @@ def generate(
         generate_include(include),
         generate_locals(source, config_filename, yaml_env),
         generate_terraform(lookup),
+        generate_exclude(lookup) if exclude else "",
         generate_inputs(variables, lookup),
     ]
 
