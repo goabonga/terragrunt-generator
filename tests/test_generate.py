@@ -281,12 +281,11 @@ locals {
 
 
 def test_generate_terraform():
-    lookup: str = "test"
-    results = generate_terraform(lookup)
+    results = generate_terraform()
 
     expected = """
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
 }
 """
 
@@ -465,7 +464,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -551,7 +556,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -638,7 +649,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -725,7 +742,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -738,19 +761,6 @@ inputs = merge({
   (lookup(local.all.test, "0", null) == null ? {} : { 0 =  lookup(local.all.test, "0") })
 )"""
     assert results == expected
-
-
-def test_generate_terraform_guards_every_level_of_a_nested_lookup():
-    results = generate_terraform("gke.cluster.helper")
-
-    assert results == (
-        "\nterraform {\n    source = "
-        'lookup(local.all, "gke", false) == false ? null : '
-        'lookup(local.all.gke, "cluster", false) == false ? null : '
-        'lookup(local.all.gke.cluster, "helper", false) == false ? null : '
-        'lookup(local.all.gke.cluster.helper, "enabled", false) == false ? null : '
-        "local.source\n}\n"
-    )
 
 
 def test_generate_exclude():
@@ -826,6 +836,7 @@ def test_generate_ignores_the_exclude_settings_without_exclude():
         lookup="test",
         hcl_files={},
         name="test",
+        exclude=False,
         exclude_actions=["plan"],
         exclude_no_run=True,
     )
@@ -843,15 +854,15 @@ def test_generate_puts_the_exclude_block_after_the_terraform_block():
         "name": "test",
     }
 
-    without, _ = generate(**arguments)
-    with_exclude, yaml = generate(**arguments, exclude=True)
+    without, _ = generate(**arguments, exclude=False)
+    with_exclude, yaml = generate(**arguments)
 
     assert "exclude {" not in without
     assert with_exclude == without.replace(
-        generate_terraform("test"),
-        generate_terraform("test") + generate_exclude("test"),
+        generate_terraform(),
+        generate_terraform() + generate_exclude("test"),
     )
-    assert yaml == generate(**arguments)[1]
+    assert yaml == generate(**arguments, exclude=False)[1]
 
 
 def test_generate_include_disabled_renders_nothing():
