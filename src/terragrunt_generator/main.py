@@ -90,6 +90,13 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
     )
+
+    parser.add_argument(
+        "--exclude",
+        help="Whether to add an exclude block, applied when the module is not enabled in the YAML configuration (default: false).",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     return parser
 
 
@@ -182,6 +189,7 @@ def run(args: argparse.Namespace, tempdir: str) -> None:
         config_filename=config_filename(args.yaml_for_env, args.yaml_output),
         yaml_env=args.yaml_for_env[0] if args.yaml_for_env else None,
         enabled=args.enabled,
+        exclude=args.exclude,
     )
 
     for yaml_output in args.yaml_output:
