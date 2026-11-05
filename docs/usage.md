@@ -12,6 +12,7 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
                             [--yaml-output YAML_OUTPUT]
                             [--yaml-for-env YAML_FOR_ENV]
                             [--enabled | --no-enabled]
+                            [--exclude | --no-exclude]
 ```
 
 ## Options
@@ -27,6 +28,7 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
 | `--yaml-output` | Directory to write the generated YAML config (repeatable; merged if it exists). |
 | `--yaml-for-env` | Environment name(s) for the YAML file, e.g. `config.dev.yaml` (repeatable). |
 | `--enabled` / `--no-enabled` | Mark the module as enabled in the YAML config (default: enabled). |
+| `--exclude` / `--no-exclude` | Add an `exclude` block that skips the unit when the module is missing or not enabled in the YAML config (default: no exclude). |
 
 ## Example
 
@@ -66,6 +68,33 @@ inputs = merge({
     activate_apis = lookup(local.all.project, "activate_apis", ["compute.googleapis.com"])
 })
 ```
+
+## Excluding a disabled unit
+
+When the key of the module is missing from the YAML config, or its `enabled`
+is false, the `source` of the `terraform` block is `null` and the unit has
+nothing to run. With `--exclude`, the generator also adds a Terragrunt
+`exclude` block, with the same guard as `source`, so that the unit is skipped:
+
+```bash
+terragrunt-generator -u ./modules/kms -l 'kms' --exclude
+```
+
+```hcl
+terraform {
+    source = lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source
+}
+
+exclude {
+    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    actions = ["all"]
+    exclude_dependencies = false
+}
+```
+
+`exclude_dependencies = false` keeps the dependencies of the unit running. For
+a nested lookup such as `gke.cluster`, every level is guarded. The generated
+YAML does not change.
 
 ## Per-environment YAML
 
