@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -35,25 +36,26 @@ def test_the_parser_defaults():
 
 
 def test_the_parser_collects_repeated_options():
-    args = build_parser().parse_args(
-        [
-            "-u",
-            "mod",
-            "-l",
-            "a",
-            "--yaml-output",
-            "x",
-            "--yaml-output",
-            "y",
-            "--yaml-for-env",
-            "dev",
-            "--yaml-for-env",
-            "prod",
-            "--no-include",
-            "--no-enabled",
-            "--exclude",
-        ]
-    )
+    with pytest.warns(DeprecationWarning):
+        args = build_parser().parse_args(
+            [
+                "-u",
+                "mod",
+                "-l",
+                "a",
+                "--yaml-output",
+                "x",
+                "--yaml-output",
+                "y",
+                "--yaml-for-env",
+                "dev",
+                "--yaml-for-env",
+                "prod",
+                "--no-include",
+                "--no-enabled",
+                "--exclude",
+            ]
+        )
 
     assert args.yaml_output == ["x", "y"]
     assert args.yaml_for_env == ["dev", "prod"]
@@ -98,6 +100,31 @@ def test_the_exclude_options_require_exclude(option, named, capsys):
         main(["-u", "mod", "-l", "a", *option])
 
     assert f"{named} requires --exclude" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("option", ["--enabled", "--no-enabled"])
+def test_enabled_is_deprecated_in_favour_of_exclude(option):
+    with pytest.warns(DeprecationWarning, match=f"{option} is deprecated.*--exclude"):
+        args = build_parser().parse_args(["-u", "mod", "-l", "a", option])
+
+    assert args.enabled is (option == "--enabled")
+
+
+def test_enabled_does_not_warn_when_it_is_not_used(recwarn):
+    build_parser().parse_args(["-u", "mod", "-l", "a"])
+
+    assert len(recwarn) == 0
+
+
+def test_the_deprecation_of_enabled_is_not_hidden_by_the_default_filters():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("ignore")
+        with patch("terragrunt_generator.main.run"):
+            main(["-u", "mod", "-l", "a", "--no-enabled"])
+
+    assert [str(w.message) for w in caught] == [
+        "--no-enabled is deprecated and will be removed in 1.5.0: use --exclude instead"
+    ]
 
 
 def test_each_call_builds_its_own_parser():
