@@ -74,17 +74,21 @@ locals {{
 """
 
 
-def generate_terraform(lookup: str) -> str:
-    """The source of the module, unless the lookup or its ``enabled`` is missing or false."""
+def guarded_source(lookup: str) -> str:
+    """``local.source``, or ``null`` when the lookup or its ``enabled`` is missing or false."""
     scope = "local.all"
     guards = ""
     for key in [*lookup.split("."), "enabled"]:
         guards += f'lookup({scope}, "{key}", false) == false ? null : '
         scope = f"{scope}.{key}"
+    return f"{guards}local.source"
 
+
+def generate_terraform(lookup: str) -> str:
+    """The ``terraform`` block, whose source is the guarded source of the module."""
     return f"""
 terraform {{
-    source = {guards}local.source
+    source = {guarded_source(lookup)}
 }}
 """
 
