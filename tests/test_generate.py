@@ -778,6 +778,62 @@ def test_generate_exclude_guards_every_level_of_a_nested_lookup():
     )
 
 
+def test_generate_exclude_lists_the_actions():
+    block = generate_exclude("kms", actions=["plan", "apply"])
+
+    assert '    actions = ["plan", "apply"]\n' in block
+    assert 'actions = ["all"]' not in block
+
+
+def test_generate_exclude_can_exclude_the_dependencies():
+    assert "    exclude_dependencies = true\n" in generate_exclude(
+        "kms", dependencies=True
+    )
+    assert "    exclude_dependencies = false\n" in generate_exclude("kms")
+
+
+def test_generate_exclude_no_run_sits_between_if_and_actions():
+    block = generate_exclude("kms", no_run=True)
+
+    assert "no_run" not in generate_exclude("kms")
+    lines = block.splitlines()
+    assert lines[2].startswith("    if = ")
+    assert lines[3] == "    no_run = true"
+    assert lines[4].startswith("    actions = ")
+
+
+def test_generate_passes_the_exclude_settings_on():
+    results, _ = generate(
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+        hcl_files={},
+        name="test",
+        exclude=True,
+        exclude_actions=["plan"],
+        exclude_dependencies=True,
+        exclude_no_run=True,
+    )
+
+    assert generate_exclude("test", ["plan"], True, True) in results
+
+
+def test_generate_ignores_the_exclude_settings_without_exclude():
+    results, _ = generate(
+        url="https://gitserver.com/test/test.git",
+        path=None,
+        version="0.1.0",
+        lookup="test",
+        hcl_files={},
+        name="test",
+        exclude_actions=["plan"],
+        exclude_no_run=True,
+    )
+
+    assert "exclude {" not in results
+
+
 def test_generate_puts_the_exclude_block_after_the_terraform_block():
     arguments = {
         "url": "https://gitserver.com/test/test.git",
