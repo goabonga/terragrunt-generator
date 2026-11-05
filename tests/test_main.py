@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2026 Chris <goabonga@pm.me>
 
-import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -26,7 +25,6 @@ def test_the_parser_defaults():
     assert args.path is None
     assert args.output is None
     assert args.include is True
-    assert args.enabled is True
     assert args.exclude is False
     assert args.exclude_actions is None
     assert args.exclude_dependencies is None
@@ -36,31 +34,28 @@ def test_the_parser_defaults():
 
 
 def test_the_parser_collects_repeated_options():
-    with pytest.warns(DeprecationWarning):
-        args = build_parser().parse_args(
-            [
-                "-u",
-                "mod",
-                "-l",
-                "a",
-                "--yaml-output",
-                "x",
-                "--yaml-output",
-                "y",
-                "--yaml-for-env",
-                "dev",
-                "--yaml-for-env",
-                "prod",
-                "--no-include",
-                "--no-enabled",
-                "--exclude",
-            ]
-        )
+    args = build_parser().parse_args(
+        [
+            "-u",
+            "mod",
+            "-l",
+            "a",
+            "--yaml-output",
+            "x",
+            "--yaml-output",
+            "y",
+            "--yaml-for-env",
+            "dev",
+            "--yaml-for-env",
+            "prod",
+            "--no-include",
+            "--exclude",
+        ]
+    )
 
     assert args.yaml_output == ["x", "y"]
     assert args.yaml_for_env == ["dev", "prod"]
     assert args.include is False
-    assert args.enabled is False
     assert args.exclude is True
 
 
@@ -103,28 +98,11 @@ def test_the_exclude_options_require_exclude(option, named, capsys):
 
 
 @pytest.mark.parametrize("option", ["--enabled", "--no-enabled"])
-def test_enabled_is_deprecated_in_favour_of_exclude(option):
-    with pytest.warns(DeprecationWarning, match=f"{option} is deprecated.*--exclude"):
-        args = build_parser().parse_args(["-u", "mod", "-l", "a", option])
+def test_enabled_options_are_removed(option, capsys):
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["-u", "mod", "-l", "a", option])
 
-    assert args.enabled is (option == "--enabled")
-
-
-def test_enabled_does_not_warn_when_it_is_not_used(recwarn):
-    build_parser().parse_args(["-u", "mod", "-l", "a"])
-
-    assert len(recwarn) == 0
-
-
-def test_the_deprecation_of_enabled_is_not_hidden_by_the_default_filters():
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("ignore")
-        with patch("terragrunt_generator.main.run"):
-            main(["-u", "mod", "-l", "a", "--no-enabled"])
-
-    assert [str(w.message) for w in caught] == [
-        "--no-enabled is deprecated and will be removed in 1.5.0: use --exclude instead"
-    ]
+    assert f"unrecognized arguments: {option}" in capsys.readouterr().err
 
 
 def test_each_call_builds_its_own_parser():

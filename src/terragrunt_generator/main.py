@@ -5,8 +5,6 @@ import argparse
 import os
 import shutil
 import sys
-import warnings
-from collections.abc import Sequence
 from pathlib import Path
 from tempfile import gettempdir
 from typing import Any
@@ -17,25 +15,6 @@ from terragrunt_generator.generate import generate
 from terragrunt_generator.reader import read_directory
 from terragrunt_generator.source import module_source
 from terragrunt_generator.yaml import merge_yaml_strings
-
-
-class DeprecatedBooleanOptionalAction(argparse.BooleanOptionalAction):
-    """A ``--flag`` / ``--no-flag`` pair that warns when it is used."""
-
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str | Sequence[Any] | None,
-        option_string: str | None = None,
-    ) -> None:
-        warnings.warn(
-            f"{option_string} is deprecated and will be removed in 1.5.0: "
-            "use --exclude instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__call__(parser, namespace, values, option_string)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -103,13 +82,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Environment names used to generate YAML files (e.g., dev, prod).",
         action="append",
         default=[],
-    )
-
-    parser.add_argument(
-        "--enabled",
-        help="Deprecated, removed in 1.5.0: use --exclude instead. Whether to mark the module as enabled in the YAML configuration (default: true).",
-        action=DeprecatedBooleanOptionalAction,
-        default=True,
     )
 
     parser.add_argument(
@@ -217,10 +189,7 @@ def write_hcl_file(output: str, content: str) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    with warnings.catch_warnings():
-        # DeprecationWarning is ignored by default outside of __main__.
-        warnings.simplefilter("always", DeprecationWarning)
-        args = parser.parse_args(argv)
+    args = parser.parse_args(argv)
     check_exclude_options(parser, args)
 
     tempdir: str = create_working_directory()
@@ -249,7 +218,6 @@ def run(args: argparse.Namespace, tempdir: str) -> None:
         include=args.include,
         config_filename=config_filename(args.yaml_for_env, args.yaml_output),
         yaml_env=args.yaml_for_env[0] if args.yaml_for_env else None,
-        enabled=args.enabled,
         exclude=args.exclude,
         exclude_actions=args.exclude_actions or ["all"],
         exclude_dependencies=bool(args.exclude_dependencies),

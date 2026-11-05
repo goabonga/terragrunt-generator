@@ -18,7 +18,7 @@ def format_description(description: str, indent: str) -> str:
     return formatted
 
 
-def get_yaml(name: str, variables: Sequence[Variable], is_enabled: bool = True) -> str:
+def get_yaml(name: str, variables: Sequence[Variable]) -> str:
 
     name_parts = name.split(".")
     indent = "  " * len(name_parts)
@@ -42,7 +42,7 @@ def get_yaml(name: str, variables: Sequence[Variable], is_enabled: bool = True) 
         nested_yaml += f"{current_indent}{part}:\n"
         current_indent += "  "
 
-    return f"""{nested_yaml}{current_indent}enabled: {"true" if is_enabled else "false"}
+    return f"""{nested_yaml}{current_indent}enabled: true
 {text}"""
 
 
