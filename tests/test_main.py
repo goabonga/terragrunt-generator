@@ -26,6 +26,7 @@ def test_the_parser_defaults():
     assert args.output is None
     assert args.include is True
     assert args.enabled is True
+    assert args.exclude is False
     assert args.yaml_output == []
     assert args.yaml_for_env == []
 
@@ -47,6 +48,7 @@ def test_the_parser_collects_repeated_options():
             "prod",
             "--no-include",
             "--no-enabled",
+            "--exclude",
         ]
     )
 
@@ -54,6 +56,7 @@ def test_the_parser_collects_repeated_options():
     assert args.yaml_for_env == ["dev", "prod"]
     assert args.include is False
     assert args.enabled is False
+    assert args.exclude is True
 
 
 def test_each_call_builds_its_own_parser():

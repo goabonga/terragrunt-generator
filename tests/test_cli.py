@@ -637,3 +637,25 @@ def test_yaml_output_merge_existing_file(
     open_calls = mock_open_read.mock_calls
     modes = [call.args[0] for call in open_calls if call.args]
     assert "r" in modes or "w" in modes
+
+
+def test_main_local_with_exclude(capsys):
+    argv = ["-u", "./examples/modules/", "-l", "test"]
+
+    main(argv)
+    without = capsys.readouterr().out
+    main([*argv, "--exclude"])
+    with_exclude = capsys.readouterr().out
+
+    block = (
+        "\nexclude {\n"
+        '    if = (lookup(local.all, "test", false) == false ? null : '
+        'lookup(local.all.test, "enabled", false) == false ? null : '
+        "local.source) == null\n"
+        '    actions = ["all"]\n'
+        "    exclude_dependencies = false\n}\n"
+    )
+    assert "exclude {" not in without
+    assert with_exclude.replace(block, "") == without
+    assert with_exclude.index("terraform {") < with_exclude.index("exclude {")
+    assert with_exclude.index("exclude {") < with_exclude.index("inputs = ")
