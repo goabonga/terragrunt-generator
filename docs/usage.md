@@ -13,6 +13,9 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
                             [--yaml-for-env YAML_FOR_ENV]
                             [--enabled | --no-enabled]
                             [--exclude | --no-exclude]
+                            [--exclude-actions EXCLUDE_ACTIONS]
+                            [--exclude-dependencies | --no-exclude-dependencies]
+                            [--exclude-no-run | --no-exclude-no-run]
 ```
 
 ## Options
@@ -29,6 +32,9 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
 | `--yaml-for-env` | Environment name(s) for the YAML file, e.g. `config.dev.yaml` (repeatable). |
 | `--enabled` / `--no-enabled` | Mark the module as enabled in the YAML config (default: enabled). |
 | `--exclude` / `--no-exclude` | Add an `exclude` block that skips the unit when the module is missing or not enabled in the YAML config (default: no exclude). |
+| `--exclude-actions` | Action skipped by the `exclude` block, e.g. `plan`, `apply`, `all`, `all_except_output` (repeatable, default: `all`). Requires `--exclude`. |
+| `--exclude-dependencies` / `--no-exclude-dependencies` | Also exclude the dependencies of the unit (default: no). Requires `--exclude`. |
+| `--exclude-no-run` / `--no-exclude-no-run` | Only prevent the unit from running, ignored for `--all` commands: adds `no_run = true` (default: not set). Requires `--exclude`. |
 
 ## Example
 
@@ -95,6 +101,24 @@ exclude {
 `exclude_dependencies = false` keeps the dependencies of the unit running. For
 a nested lookup such as `gke.cluster`, every level is guarded. The generated
 YAML does not change.
+
+The other settings of the Terragrunt `exclude` block have an option each. They
+require `--exclude`:
+
+```bash
+terragrunt-generator -u ./modules/kms -l 'kms' --exclude \
+  --exclude-actions plan --exclude-actions apply \
+  --exclude-dependencies --exclude-no-run
+```
+
+```hcl
+exclude {
+    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    no_run = true
+    actions = ["plan", "apply"]
+    exclude_dependencies = true
+}
+```
 
 ## Per-environment YAML
 
