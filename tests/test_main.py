@@ -25,7 +25,7 @@ def test_the_parser_defaults():
     assert args.path is None
     assert args.output is None
     assert args.include is True
-    assert args.exclude is False
+    assert args.exclude is True
     assert args.exclude_actions is None
     assert args.exclude_dependencies is None
     assert args.exclude_no_run is None
@@ -49,14 +49,14 @@ def test_the_parser_collects_repeated_options():
             "--yaml-for-env",
             "prod",
             "--no-include",
-            "--exclude",
+            "--no-exclude",
         ]
     )
 
     assert args.yaml_output == ["x", "y"]
     assert args.yaml_for_env == ["dev", "prod"]
     assert args.include is False
-    assert args.exclude is True
+    assert args.exclude is False
 
 
 def test_the_parser_collects_the_exclude_options():
@@ -92,7 +92,7 @@ def test_the_parser_collects_the_exclude_options():
 )
 def test_the_exclude_options_require_exclude(option, named, capsys):
     with pytest.raises(SystemExit):
-        main(["-u", "mod", "-l", "a", *option])
+        main(["-u", "mod", "-l", "a", "--no-exclude", *option])
 
     assert f"{named} requires --exclude" in capsys.readouterr().err
 

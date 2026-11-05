@@ -86,9 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--exclude",
-        help="Whether to add an exclude block, applied when the module is not enabled in the YAML configuration (default: false).",
+        help="Whether to add an exclude block, applied when the module is missing or not enabled in the YAML configuration (default: true).",
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=True,
     )
 
     parser.add_argument(
