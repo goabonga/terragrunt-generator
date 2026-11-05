@@ -27,6 +27,9 @@ def test_the_parser_defaults():
     assert args.include is True
     assert args.enabled is True
     assert args.exclude is False
+    assert args.exclude_actions is None
+    assert args.exclude_dependencies is None
+    assert args.exclude_no_run is None
     assert args.yaml_output == []
     assert args.yaml_for_env == []
 
@@ -57,6 +60,44 @@ def test_the_parser_collects_repeated_options():
     assert args.include is False
     assert args.enabled is False
     assert args.exclude is True
+
+
+def test_the_parser_collects_the_exclude_options():
+    args = build_parser().parse_args(
+        [
+            "-u",
+            "mod",
+            "-l",
+            "a",
+            "--exclude",
+            "--exclude-actions",
+            "plan",
+            "--exclude-actions",
+            "apply",
+            "--exclude-dependencies",
+            "--exclude-no-run",
+        ]
+    )
+
+    assert args.exclude_actions == ["plan", "apply"]
+    assert args.exclude_dependencies is True
+    assert args.exclude_no_run is True
+
+
+@pytest.mark.parametrize(
+    ("option", "named"),
+    [
+        (["--exclude-actions", "plan"], "--exclude-actions"),
+        (["--exclude-dependencies"], "--exclude-dependencies"),
+        (["--no-exclude-dependencies"], "--exclude-dependencies"),
+        (["--exclude-no-run"], "--exclude-no-run"),
+    ],
+)
+def test_the_exclude_options_require_exclude(option, named, capsys):
+    with pytest.raises(SystemExit):
+        main(["-u", "mod", "-l", "a", *option])
+
+    assert f"{named} requires --exclude" in capsys.readouterr().err
 
 
 def test_each_call_builds_its_own_parser():

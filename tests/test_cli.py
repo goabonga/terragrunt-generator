@@ -659,3 +659,28 @@ def test_main_local_with_exclude(capsys):
     assert with_exclude.replace(block, "") == without
     assert with_exclude.index("terraform {") < with_exclude.index("exclude {")
     assert with_exclude.index("exclude {") < with_exclude.index("inputs = ")
+
+
+def test_main_local_with_the_exclude_options(capsys):
+    main(
+        [
+            "-u",
+            "./examples/modules/",
+            "-l",
+            "test",
+            "--exclude",
+            "--exclude-actions",
+            "plan",
+            "--exclude-actions",
+            "apply",
+            "--exclude-dependencies",
+            "--exclude-no-run",
+        ]
+    )
+
+    block = capsys.readouterr().out.split("exclude {\n")[1].split("}\n")[0]
+    assert block.splitlines()[1:] == [
+        "    no_run = true",
+        '    actions = ["plan", "apply"]',
+        "    exclude_dependencies = true",
+    ]
