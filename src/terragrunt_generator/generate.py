@@ -83,6 +83,17 @@ def guarded_source(lookup: str) -> str:
     return f"{guards}local.source"
 
 
+def excluded_condition(lookup: str) -> str:
+    """``true`` when the lookup or its ``enabled`` is missing or false."""
+    scope = "local.all"
+    keys = [*lookup.split("."), "enabled"]
+    conditions = []
+    for key in keys:
+        conditions.append(f'lookup({scope}, "{key}", false) == false')
+        scope = f"{scope}.{key}"
+    return " ? true : ".join(conditions)
+
+
 def generate_terraform(lookup: str) -> str:
     """The ``terraform`` block, whose source is the guarded source of the module."""
     return f"""
@@ -98,11 +109,11 @@ def generate_exclude(
     dependencies: bool = False,
     no_run: bool = False,
 ) -> str:
-    """The ``exclude`` block of a unit whose guarded source is ``null``."""
+    """The ``exclude`` block of a unit that is missing or not enabled in the config."""
     no_run_line = "    no_run = true\n" if no_run else ""
     return f"""
 exclude {{
-    if = ({guarded_source(lookup)}) == null
+    if = {excluded_condition(lookup)}
 {no_run_line}    actions = {json.dumps(list(actions))}
     exclude_dependencies = {"true" if dependencies else "false"}
 }}

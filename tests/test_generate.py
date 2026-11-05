@@ -758,7 +758,7 @@ def test_generate_exclude():
         generate_exclude("kms")
         == """
 exclude {
-    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    if = lookup(local.all, "kms", false) == false ? true : lookup(local.all.kms, "enabled", false) == false
     actions = ["all"]
     exclude_dependencies = false
 }
@@ -768,11 +768,10 @@ exclude {
 
 def test_generate_exclude_guards_every_level_of_a_nested_lookup():
     assert generate_exclude("gke.cluster") == (
-        "\nexclude {\n    if = ("
-        'lookup(local.all, "gke", false) == false ? null : '
-        'lookup(local.all.gke, "cluster", false) == false ? null : '
-        'lookup(local.all.gke.cluster, "enabled", false) == false ? null : '
-        "local.source) == null\n"
+        "\nexclude {\n    if = "
+        'lookup(local.all, "gke", false) == false ? true : '
+        'lookup(local.all.gke, "cluster", false) == false ? true : '
+        'lookup(local.all.gke.cluster, "enabled", false) == false\n'
         '    actions = ["all"]\n'
         "    exclude_dependencies = false\n}\n"
     )

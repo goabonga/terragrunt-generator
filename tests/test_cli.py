@@ -649,9 +649,8 @@ def test_main_local_with_exclude(capsys):
 
     block = (
         "\nexclude {\n"
-        '    if = (lookup(local.all, "test", false) == false ? null : '
-        'lookup(local.all.test, "enabled", false) == false ? null : '
-        "local.source) == null\n"
+        '    if = lookup(local.all, "test", false) == false ? true : '
+        'lookup(local.all.test, "enabled", false) == false\n'
         '    actions = ["all"]\n'
         "    exclude_dependencies = false\n}\n"
     )
