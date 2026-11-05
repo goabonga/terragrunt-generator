@@ -71,7 +71,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -129,7 +135,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "test", false) == false ? null : lookup(local.all.test, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "test", false) == false ? true : lookup(local.all.test, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = {
@@ -639,19 +651,18 @@ def test_yaml_output_merge_existing_file(
     assert "r" in modes or "w" in modes
 
 
-def test_main_local_with_exclude(capsys):
+def test_main_local_without_exclude(capsys):
     argv = ["-u", "./examples/modules/", "-l", "test"]
 
-    main(argv)
+    main([*argv, "--no-exclude"])
     without = capsys.readouterr().out
-    main([*argv, "--exclude"])
+    main(argv)
     with_exclude = capsys.readouterr().out
 
     block = (
         "\nexclude {\n"
-        '    if = (lookup(local.all, "test", false) == false ? null : '
-        'lookup(local.all.test, "enabled", false) == false ? null : '
-        "local.source) == null\n"
+        '    if = lookup(local.all, "test", false) == false ? true : '
+        'lookup(local.all.test, "enabled", false) == false\n'
         '    actions = ["all"]\n'
         "    exclude_dependencies = false\n}\n"
     )
@@ -668,7 +679,6 @@ def test_main_local_with_the_exclude_options(capsys):
             "./examples/modules/",
             "-l",
             "test",
-            "--exclude",
             "--exclude-actions",
             "plan",
             "--exclude-actions",

@@ -11,7 +11,6 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
                             [--include | --no-include] -l LOOKUP [-o OUTPUT]
                             [--yaml-output YAML_OUTPUT]
                             [--yaml-for-env YAML_FOR_ENV]
-                            [--enabled | --no-enabled]
                             [--exclude | --no-exclude]
                             [--exclude-actions EXCLUDE_ACTIONS]
                             [--exclude-dependencies | --no-exclude-dependencies]
@@ -30,11 +29,10 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
 | `-o`, `--output` | File (or directory) to write `terragrunt.hcl` to (default: stdout). |
 | `--yaml-output` | Directory to write the generated YAML config (repeatable; merged if it exists). |
 | `--yaml-for-env` | Environment name(s) for the YAML file, e.g. `config.dev.yaml` (repeatable). |
-| `--enabled` / `--no-enabled` | **Deprecated**, removed in 1.5.0: use `--exclude` instead. Mark the module as enabled in the YAML config (default: enabled). |
-| `--exclude` / `--no-exclude` | Add an `exclude` block that skips the unit when the module is missing or not enabled in the YAML config (default: no exclude). |
-| `--exclude-actions` | Action skipped by the `exclude` block, e.g. `plan`, `apply`, `all`, `all_except_output` (repeatable, default: `all`). Requires `--exclude`. |
-| `--exclude-dependencies` / `--no-exclude-dependencies` | Also exclude the dependencies of the unit (default: no). Requires `--exclude`. |
-| `--exclude-no-run` / `--no-exclude-no-run` | Only prevent the unit from running, ignored for `--all` commands: adds `no_run = true` (default: not set). Requires `--exclude`. |
+| `--exclude` / `--no-exclude` | Add an `exclude` block that skips the unit when the module is missing or not enabled in the YAML config (default: exclude). |
+| `--exclude-actions` | Action skipped by the `exclude` block, e.g. `plan`, `apply`, `all`, `all_except_output` (repeatable, default: `all`). Cannot be used with `--no-exclude`. |
+| `--exclude-dependencies` / `--no-exclude-dependencies` | Also exclude the dependencies of the unit (default: no). Cannot be used with `--no-exclude`. |
+| `--exclude-no-run` / `--no-exclude-no-run` | Only prevent the unit from running, ignored for `--all` commands: adds `no_run = true` (default: not set). Cannot be used with `--no-exclude`. |
 
 ## Example
 
@@ -63,7 +61,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "project", false) == false ? null : lookup(local.all.project, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "project", false) == false ? true : lookup(local.all.project, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
@@ -75,52 +79,51 @@ inputs = merge({
 })
 ```
 
-## Deprecated options
+## Removed options
 
-`--enabled` / `--no-enabled` are deprecated since 1.3.0. Using either prints a
-`DeprecationWarning` and still works. They are removed in 1.5.0, following the
-[deprecation policy](stability.md). `--exclude` skips a unit that is missing or
-not enabled in the YAML config, which replaces them.
+`--enabled` / `--no-enabled` were deprecated in 1.3.0 and are removed in 1.5.0,
+following the [deprecation policy](stability.md). The generated YAML always
+writes `enabled: true`; set it to `false` in the YAML config to disable a unit.
 
 ## Excluding a disabled unit
 
 When the key of the module is missing from the YAML config, or its `enabled`
-is false, the `source` of the `terraform` block is `null` and the unit has
-nothing to run. With `--exclude`, the generator also adds a Terragrunt
-`exclude` block, with the same guard as `source`, so that the unit is skipped:
+is false, the generated `exclude` block skips the unit. The `terraform` block
+keeps the plain `local.source`:
 
 ```bash
-terragrunt-generator -u ./modules/kms -l 'kms' --exclude
+terragrunt-generator -u ./modules/kms -l 'kms'
 ```
 
 ```hcl
 terraform {
-    source = lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source
+    source = local.source
 }
 
 exclude {
-    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    if = lookup(local.all, "kms", false) == false ? true : lookup(local.all.kms, "enabled", false) == false
     actions = ["all"]
     exclude_dependencies = false
 }
 ```
 
 `exclude_dependencies = false` keeps the dependencies of the unit running. For
-a nested lookup such as `gke.cluster`, every level is guarded. The generated
-YAML does not change.
+a nested lookup such as `gke.cluster`, every level is checked. The generated
+YAML does not change. `--no-exclude` generates no `exclude` block, and so no
+guard at all.
 
 The other settings of the Terragrunt `exclude` block have an option each. They
-require `--exclude`:
+cannot be used with `--no-exclude`:
 
 ```bash
-terragrunt-generator -u ./modules/kms -l 'kms' --exclude \
+terragrunt-generator -u ./modules/kms -l 'kms' \
   --exclude-actions plan --exclude-actions apply \
   --exclude-dependencies --exclude-no-run
 ```
 
 ```hcl
 exclude {
-    if = (lookup(local.all, "kms", false) == false ? null : lookup(local.all.kms, "enabled", false) == false ? null : local.source) == null
+    if = lookup(local.all, "kms", false) == false ? true : lookup(local.all.kms, "enabled", false) == false
     no_run = true
     actions = ["plan", "apply"]
     exclude_dependencies = true
