@@ -30,7 +30,7 @@ usage: terragrunt-generator [-h] [-V] -u URL [-v VERSION] [-p PATH]
 | `-o`, `--output` | File (or directory) to write `terragrunt.hcl` to (default: stdout). |
 | `--yaml-output` | Directory to write the generated YAML config (repeatable; merged if it exists). |
 | `--yaml-for-env` | Environment name(s) for the YAML file, e.g. `config.dev.yaml` (repeatable). |
-| `--enabled` / `--no-enabled` | Mark the module as enabled in the YAML config (default: enabled). |
+| `--enabled` / `--no-enabled` | **Deprecated**, removed in 1.5.0: use `--exclude` instead. Mark the module as enabled in the YAML config (default: enabled). |
 | `--exclude` / `--no-exclude` | Add an `exclude` block that skips the unit when the module is missing or not enabled in the YAML config (default: no exclude). |
 | `--exclude-actions` | Action skipped by the `exclude` block, e.g. `plan`, `apply`, `all`, `all_except_output` (repeatable, default: `all`). Requires `--exclude`. |
 | `--exclude-dependencies` / `--no-exclude-dependencies` | Also exclude the dependencies of the unit (default: no). Requires `--exclude`. |
@@ -74,6 +74,13 @@ inputs = merge({
     activate_apis = lookup(local.all.project, "activate_apis", ["compute.googleapis.com"])
 })
 ```
+
+## Deprecated options
+
+`--enabled` / `--no-enabled` are deprecated since 1.3.0. Using either prints a
+`DeprecationWarning` and still works. They are removed in 1.5.0, following the
+[deprecation policy](stability.md). `--exclude` skips a unit that is missing or
+not enabled in the YAML config, which replaces them.
 
 ## Excluding a disabled unit
 
