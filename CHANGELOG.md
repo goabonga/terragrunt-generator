@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/). New entries are
 generated from [Conventional Commits](https://www.conventionalcommits.org/)
 by [multicz](https://github.com/goabonga/multicz).
 
+## [1.3.0] - 2026-11-05
+
+### Added
+
+- generate an exclude block guarded like the source (`bbf6336`)
+- add the --exclude option (`c5bbae2`)
+- let the exclude block set its actions, dependencies and no_run (`ad7b7d7`)
+- add options for the exclude actions, dependencies and no_run (`868a12f`)
+
+### Deprecated
+
+- warn when --enabled or --no-enabled is used (`332796c`)
+
 ## [1.2.0] - 2026-10-26
 
 ### Added
