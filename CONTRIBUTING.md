@@ -126,6 +126,22 @@ Each one also gets an issue, assigned to the repository owner, which the
 pull request closes when it is merged. If the pull request is closed
 without a merge, the issue is closed as not planned.
 
+#### Actions event policy for `pull_request_target`
+
+The `auto-merge-signed` and `dependabot-rewrite` workflows use the
+`pull_request_target` event, because they need the signing key and a token
+that can push, which `pull_request` does not provide. They only run trusted
+scripts checked out from `main`; pull request code is never executed with
+those secrets.
+
+GitHub blocks `pull_request_target` by default on public repositories that
+have no Actions event policy. This is a setting of the repository or its
+organization, not of the workflow files. A repository admin must therefore
+configure an Actions event policy that allows `pull_request_target`
+(Settings, Actions, event policies; see
+[Governing execution of GitHub Actions workflows](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)),
+or both workflows are blocked and the signed merge stops working.
+
 ## Commit messages
 
 Commit messages MUST follow
