@@ -28,7 +28,7 @@ dependencies = [
     # and string values, __is_block__ markers). reader.py normalizes it
     # back via SerializationOptions(strip_string_quotes, explicit_blocks).
     # Bump this pin deliberately after re-validating the parser output.
-    "python-hcl2==8.1.4",
+    "python-hcl2==8.2.0",
     # Pinned exactly: 3.2.1 clears GHSA-59cr-6r3x-644w and
     # GHSA-83vg-56qc-22m7 on top of the advisory backlog fixed across
     # 3.1.51-3.1.61. Bump this pin deliberately after validating each

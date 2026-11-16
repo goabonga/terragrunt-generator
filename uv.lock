@@ -788,15 +788,15 @@ wheels = [
 
 [[package]]
 name = "python-hcl2"
-version = "8.1.4"
+version = "8.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lark" },
     { name = "regex" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/3b/a66df999c382abf2d37f6c7b618a782958615acd41a53615f994dfd6611b/python_hcl2-8.1.4.tar.gz", hash = "sha256:b4145c930540e99e3e9b4f7de297775bdf856df29782a7abdb0916cbfcab7865", size = 119307, upload-time = "2026-09-08T08:26:26.55Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/c1/f1da88976116f93865429c07758febb8a0e9c66830c3107f5ba6f029253d/python_hcl2-8.2.0.tar.gz", hash = "sha256:88b615c2cea920090e4a8d869d8aa7ccb3658a9bd48e75a4b76fa6685e2ce657", size = 120530, upload-time = "2026-11-09T14:51:21.463Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/c7/9b8918ab4954ecad677b03f36f9121d5467a4285f41507fdc6789a33dc3c/python_hcl2-8.1.4-py3-none-any.whl", hash = "sha256:75738bd95717d692a683495babf4d00063f1b211e2eca04b156c6d79b9a0feae", size = 102957, upload-time = "2026-09-08T08:26:25.344Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/65/bf71aaef9b8fe677e8a9d8f96f67b4f6989fe59eeeef177288de70513f8a/python_hcl2-8.2.0-py3-none-any.whl", hash = "sha256:00a213df1b33e4d69b607b2f0a6a0a21f2c0df2d69ad6a2cb3d5af468f17a087", size = 102916, upload-time = "2026-11-09T14:51:20.377Z" },
 ]
 
 [[package]]
@@ -970,7 +970,7 @@ favicon = [
 [package.metadata]
 requires-dist = [
     { name = "gitpython", specifier = "==3.2.1" },
-    { name = "python-hcl2", specifier = "==8.1.4" },
+    { name = "python-hcl2", specifier = "==8.2.0" },
 ]
 
 [package.metadata.requires-dev]
