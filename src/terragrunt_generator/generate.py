@@ -19,13 +19,12 @@ def generate_header(
     source: ModuleSource,
     lookup: str,
     variables: Sequence[Variable] = (),
-    enabled: bool = True,
 ) -> tuple[str, str]:
     lookup = lookup.replace("local.all", "")
 
     lookup_prefix = lookup.split(".")[0]
 
-    yaml_raw = get_yaml(lookup, variables, enabled)
+    yaml_raw = get_yaml(lookup, variables)
     yaml_comment = yaml_raw.replace(f"{lookup_prefix}:", f"# {lookup_prefix}:").replace(
         "\n  ", "\n#   "
     )
@@ -74,22 +73,22 @@ locals {{
 """
 
 
-def guarded_source(lookup: str) -> str:
-    """``local.source``, or ``null`` when the lookup or its ``enabled`` is missing or false."""
+def excluded_condition(lookup: str) -> str:
+    """``true`` when the lookup or its ``enabled`` is missing or false."""
     scope = "local.all"
-    guards = ""
+    conditions = []
     for key in [*lookup.split("."), "enabled"]:
-        guards += f'lookup({scope}, "{key}", false) == false ? null : '
+        conditions.append(f'lookup({scope}, "{key}", false) == false')
         scope = f"{scope}.{key}"
-    return f"{guards}local.source"
+    return " ? true : ".join(conditions)
 
 
-def generate_terraform(lookup: str) -> str:
-    """The ``terraform`` block, whose source is the guarded source of the module."""
-    return f"""
-terraform {{
-    source = {guarded_source(lookup)}
-}}
+def generate_terraform() -> str:
+    """The ``terraform`` block, whose source is the source of the module."""
+    return """
+terraform {
+    source = local.source
+}
 """
 
 
@@ -99,11 +98,11 @@ def generate_exclude(
     dependencies: bool = False,
     no_run: bool = False,
 ) -> str:
-    """The ``exclude`` block of a unit whose guarded source is ``null``."""
+    """The ``exclude`` block of a unit that is missing or not enabled in the config."""
     no_run_line = "    no_run = true\n" if no_run else ""
     return f"""
 exclude {{
-    if = ({guarded_source(lookup)}) == null
+    if = {excluded_condition(lookup)}
 {no_run_line}    actions = {json.dumps(list(actions))}
     exclude_dependencies = {"true" if dependencies else "false"}
 }}
@@ -181,8 +180,7 @@ def generate(
     name: str | None = None,
     config_filename: str = "config.yaml",
     yaml_env: str | None = None,
-    enabled: bool = True,
-    exclude: bool = False,
+    exclude: bool = True,
     exclude_actions: Sequence[str] = ("all",),
     exclude_dependencies: bool = False,
     exclude_no_run: bool = False,
@@ -191,13 +189,13 @@ def generate(
     source = module_source(url, version, path)
 
     header, yaml = generate_header(
-        source.name if name is None else name, source, lookup, variables, enabled
+        source.name if name is None else name, source, lookup, variables
     )
     sections = [
         header,
         generate_include(include),
         generate_locals(source, config_filename, yaml_env),
-        generate_terraform(lookup),
+        generate_terraform(),
         generate_exclude(lookup, exclude_actions, exclude_dependencies, exclude_no_run)
         if exclude
         else "",

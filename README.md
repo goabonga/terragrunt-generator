@@ -70,7 +70,13 @@ locals {
 }
 
 terraform {
-    source = lookup(local.all, "project", false) == false ? null : lookup(local.all.project, "enabled", false) == false ? null : local.source
+    source = local.source
+}
+
+exclude {
+    if = lookup(local.all, "project", false) == false ? true : lookup(local.all.project, "enabled", false) == false
+    actions = ["all"]
+    exclude_dependencies = false
 }
 
 inputs = merge({
